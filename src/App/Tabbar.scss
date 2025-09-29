@@ -1,0 +1,67 @@
+.tabbar
+{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding-right: 18px;
+
+  ul
+  {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    width: 100%;
+
+    li
+    {
+      width: 25%;
+      text-align: center;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    a
+    {
+      color: rgb(153, 153, 153);
+      text-decoration: none;
+
+      .icon
+      {
+        line-height: 1;
+        margin-bottom: 2vw;
+      }
+
+      .text
+      {
+        font-size: clamp(7px, 2.2vw, 11px);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+
+  @media (min-width: 768px) {
+    ul {
+      li {
+        min-height: 70px;
+      }
+
+      a {
+        .icon {
+          margin-bottom: 4px;
+        }
+
+        .text {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Allow social media crawlers to access OGP images
+User-agent: facebookexternalhit/*
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Sitemap
+Sitemap: https://niigata-craftbeer-map.netlify.app/sitemap.xml

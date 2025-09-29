@@ -1,0 +1,238 @@
+.shop-list {
+  color: #555555;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+  background: linear-gradient(135deg, rgba(0, 160, 230, 0.6) 0%, rgba(79, 195, 247, 0.6) 50%, rgba(129, 199, 132, 0.6) 100%);
+  border-radius: 0;
+  padding: 0 0 8px 0;
+  
+  // プルリフレッシュを完全に無効化
+  &.no-pull-refresh {
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  .shop {
+    border-bottom: 1px solid #eeeeee;
+    padding: 14px 10px 14px 10px;
+    font-size: 1rem;
+    position: relative;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin: 10px 8px 0 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    transition: box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .shop:nth-child(even) {
+    background-color: #f7f7f7;
+  }
+
+  .shop-list-category {
+    margin: 18px 10px 8px 10px;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    color: #41b0f5;
+    font-weight: bold;
+  }
+
+  tr {
+    background-color: transparent !important;
+  }
+
+  .skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+    border-radius: 8px;
+    background: #f5f5f5;
+    margin: 10px 8px 0 8px;
+    padding: 14px 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    .skeleton-content {
+      width: 70%;
+      .skeleton-title {
+        height: 18px;
+        margin-bottom: 8px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+      }
+      .skeleton-text {
+        height: 12px;
+        margin-bottom: 6px;
+        background-color: #e0e0e0;
+        width: 80%;
+        border-radius: 4px;
+      }
+    }
+    .skeleton-image {
+      width: 60px;
+      height: 60px;
+      background-color: #e0e0e0;
+      border-radius: 8px;
+    }
+  }
+
+  @keyframes skeleton-loading {
+    0% { opacity: 0.7; }
+    100% { opacity: 0.9; }
+  }
+
+  .list-loader {
+    width: 28px;
+    height: 28px;
+    margin: 16px auto;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .list-end-message {
+    text-align: center;
+    color: #777;
+    font-size: 0.95rem;
+    padding: 10px 0;
+  }
+
+  @media (max-width: 480px) {
+    .shop {
+      font-size: 0.97rem;
+      padding: 14px;
+      margin: 10px 10px 10px 10px;
+      gap: 8px;
+    }
+    .shop-list-category {
+      font-size: 0.98rem;
+      margin: 12px 4px 4px 4px;
+    }
+    .skeleton {
+      padding: 12px 4px;
+      margin: 8px 2px 0 2px;
+      gap: 8px;
+      .skeleton-image {
+        width: 48px;
+        height: 48px;
+      }
+    }
+  }
+}
+
+
+// 手動読み込みボタンのスタイル
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  margin: 10px 0;
+}
+
+.load-more-button {
+  background: linear-gradient(135deg, #00a0e6 0%, #4fc3f7 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 160, 230, 0.3);
+  min-width: 160px;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 160, 230, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// 終了メッセージのスタイル
+.end-message {
+  text-align: center;
+  padding: 20px;
+  margin: 10px 0;
+  color: #666;
+  font-size: 0.9rem;
+  
+  p {
+    margin: 0;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// スケルトンローディングのスタイル改善
+.skeleton-container {
+  padding: 10px 8px;
+}
+
+.skeleton {
+  background: #f0f0f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  
+  .skeleton-content {
+    padding: 14px;
+    
+    .skeleton-title {
+      height: 18px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      width: 70%;
+    }
+    
+    .skeleton-text {
+      height: 14px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      width: 50%;
+    }
+  }
+  
+  .skeleton-image {
+    width: 60px;
+    height: 60px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    margin-right: 14px;
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}

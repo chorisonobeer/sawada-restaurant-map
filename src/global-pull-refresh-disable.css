@@ -1,0 +1,61 @@
+/* 
+ * 全ページでプルリフレッシュを無効化するグローバルCSS
+ * 2025-09-17 追加
+ */
+
+/* ルート要素でプルリフレッシュを無効化 */
+html, body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PWAアプリ全体でプルリフレッシュを無効化 */
+#root {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
+}
+
+/* 各ページコンテナでプルリフレッシュを無効化 */
+.shop-list,
+.images,
+.events,
+.about-us {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* iOS Safari対応 */
+@supports (-webkit-touch-callout: none) {
+  html, body, #root {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+  }
+  
+  .shop-list,
+  .images,
+  .events,
+  .about-us {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+  }
+}
+
+/* Android Chrome対応 */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  html, body, #root {
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
+  }
+  
+  .shop-list,
+  .images,
+  .events,
+  .about-us {
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
+  }
+}

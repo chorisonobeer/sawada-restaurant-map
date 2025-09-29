@@ -1,0 +1,301 @@
+/* 
+Full Path: /src/App/Shop.scss
+Last Modified: 2025-02-28 16:50:00
+*/
+
+.shop-single {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  z-index: 10;
+  background-color: #ffffff;
+  height: 100%;
+  /* アニメーション初期状態: 右側オフセット */
+  transform: translateX(100%);
+  transform-origin: center center;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+
+  &.slide-in {
+    transform: translateX(0);
+  }
+
+  &.closing {
+    transform: scale(0.5);
+    opacity: 0.8;
+    transition: 0.8s cubic-bezier(0,.71,.93,.45);
+  }
+
+  .head {
+    padding: 0 16px;
+    background-color: var(--primary-color);
+    box-sizing: border-box;
+    height: 44px;
+    text-align: right;
+
+    button {
+      position: relative;
+      background-color: transparent;
+      margin: 0;
+      padding: 0;
+      border: none;
+      color: #ffffff;
+      height: 44px;
+      padding-left: 18px;
+      font-size: 1rem;
+
+      svg {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%);
+      }
+    }
+  }
+
+  .container {
+    height: 100%;
+    box-sizing: border-box;
+    /* 下に余白を追加してボタンが隠れないようにする */
+    padding: 16px 16px 200px;
+    overflow-y: auto;
+
+    /* IE, Edge 対応 */
+    -ms-overflow-style: none;
+    /* Firefox 対応 */
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .shop-title {
+    font-size: 1.4rem;
+    word-break: break-all;
+    margin-bottom: 24px;
+  }
+
+  /* カテゴリ & 距離を同じ高さ・同じ行で完璧に揃える */
+  .tag-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    margin-top: 10px;
+  }
+
+  /* 
+    カテゴリと距離のボックスに inline-flex を適用し、
+    高さを揃える。line-height と padding を同じにして 
+    テキストを中央寄せに。
+  */
+  .category,
+  .distance {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 4px 8px; /* 横にも少し余白を付け足し */
+    font-size: 0.8rem;
+//    line-height: 1.5;
+  }
+
+  .category {
+    background-color: #f5b041;
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .distance {
+    background-color: #41b0f5;
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .shop-info-box {
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    padding: 12px 15px;
+    margin: 15px 0;
+
+    .info-item {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+      .info-label {
+        font-weight: bold;
+        margin-right: 5px;
+      }
+    }
+  }
+
+  .shop-images {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+
+    .shop-image {
+      width: 100%;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 30px;
+
+    .action-button {
+      display: block;
+      padding: 15px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      text-decoration: none;
+
+      &.phone-button {
+        background-color: #FFA500;
+        color: white;
+      }
+      &.web-button {
+        background-color: #009688;
+        color: white;
+      }
+    }
+  }
+
+  .shop-images-container {
+    margin: 20px 0;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  .shop-images-scroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 10px;
+    padding-bottom: 8px; /* スクロールバー用の余白 */
+  }
+  
+  .shop-image-wrapper {
+    flex: 0 0 auto;
+    width: 85%;
+    scroll-snap-align: center;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+  
+  .shop-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  
+  /* スクロールバーのスタイル */
+  .shop-images-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .shop-images-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+  }
+  
+  .shop-images-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+  }
+  
+  .shop-images-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  .shop-images-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 20px 0;
+  }
+  
+  .shop-image-item {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .shop-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+  }
+  
+  /* 画像が1枚だけの場合は幅いっぱいに表示 */
+  .shop-images-grid:has(.shop-image-item:only-child) {
+    grid-template-columns: 1fr;
+  }
+  
+  /* モバイル向けのスタイル調整 */
+  @media (max-width: 480px) {
+    .shop-title {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+    .tag-box {
+      gap: 6px;
+      margin-bottom: 6px;
+      margin-top: 4px;
+    }
+    .category, .distance {
+      font-size: 0.7rem;
+      padding: 3px 6px;
+    }
+    .shop-info-box .info-item {
+      font-size: 0.8rem;
+    }
+  }
+  .shop-images-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shop-route {
+  margin: 15px 0;
+  padding: 12px 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+
+  .route-link {
+    display: block;
+    padding: 10px;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    transition: color 0.2s ease;
+    background-color: #ffffff;
+    border-radius: 4px;
+    border: 1px solid #007bff;
+
+    &:hover {
+      color: #0056b3;
+      background-color: #f8f9fa;
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "title": "NIIGATA CRAFT BEER MAP2025",
+  "description": "新潟のクラフトビールが飲める・買える・楽しめるMAPです。新潟をもっと楽しもう！！",
+  "data_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5q83Qk_jPl1J5YEY9s1D-aGySypqiFuJf8QIDzYr-3W2a2RIrk3g0d6QlRgHj8NzbF3xEjLjfRIfj/pub?gid=208511176&single=true&output=csv",
+  "form_url": null,
+  "logo_image_url": "/logo.svg",
+  "background_image_url": "/back.jpg",
+  "primary_color": "#00A0E6",
+  "orderby": "distance",
+  "event_data_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vT7Y5rToJlUy3hDZi1-G5JiyQat8gzbU0H0I45Dn1mN5y2QoWVzbITC6fcU92Cgn8SAcsCJF6sDk751/pub?gid=0&single=true&output=csv"
+}
