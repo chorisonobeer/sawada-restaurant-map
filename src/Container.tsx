@@ -2,6 +2,7 @@ import React from "react";
 
 import App from './App'
 import About from './About'
+import PWAInstallBanner from './App/PWAInstallBanner'
 import './Container.scss'
 
 function Content() {
@@ -11,6 +12,7 @@ function Content() {
         <About />
         <App />
       </div>
+      <PWAInstallBanner />
     </div>
   );
 }
