@@ -19,7 +19,7 @@
     {
       width: 25%;
       text-align: center;
-      min-height: 60px;
+      min-height: 80px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -27,7 +27,7 @@
 
     a
     {
-      color: rgb(153, 153, 153);
+      color: rgb(74, 74, 74);
       text-decoration: none;
 
       .icon
@@ -38,7 +38,8 @@
 
       .text
       {
-        font-size: clamp(7px, 2.2vw, 11px);
+        font-size: clamp(10.5px, 2.2vw, 12px);
+        font-weight: bolder;
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
