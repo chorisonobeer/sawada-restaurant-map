@@ -28,8 +28,8 @@ export type MapProps<T extends MapPointBase = MapPointBase> = {
   isEventMode?: boolean;
 };
 
-// 新潟県中心の座標（初期表示用フォールバック）
-const NIIGATA_CENTER: [number, number] = [138.5, 37.9];
+// 佐渡島中心の座標（初期表示用フォールバック）
+const SADO_CENTER: [number, number] = [138.3, 38.0];
 const DEFAULT_ZOOM = 8;
 
 const CSS: React.CSSProperties = {
@@ -219,7 +219,7 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
     const { geolonia } = window;
     
     // GeolocationContextから位置情報を取得して初期位置を決定
-    const initialCenter = location || NIIGATA_CENTER;
+    const initialCenter = location || SADO_CENTER;
     const initialZoom = location ? 15 : DEFAULT_ZOOM;
     
     const map = new geolonia.Map({

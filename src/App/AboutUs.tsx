@@ -6,8 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import './AboutUs.scss';
 import config from '../config.json';
-import { FaPlus, FaBeer, FaMapMarkedAlt, FaSearch, FaCamera, FaInfoCircle } from 'react-icons/fa';
-import VersionManager from '../utils/versionManager';
+import { FaPlus } from 'react-icons/fa';
 
 // スポンサー企業情報の型定義
 type Sponsor = {
@@ -16,57 +15,32 @@ type Sponsor = {
   linkUrl: string;
 };
 
-// スポンサー企業のダミーデータ
+// スポンサー企業のサンプルデータ
 const sponsors: Sponsor[] = [
-  { name: 'ダミースポンサー1', imageUrl: '/sponsors/dummy1.png', linkUrl: '#' },
-  { name: 'ダミースポンサー2', imageUrl: '/sponsors/dummy2.png', linkUrl: '#' },
-  { name: 'ダミースポンサー3', imageUrl: '/sponsors/dummy3.png', linkUrl: '#' },
-  { name: 'ダミースポンサー4', imageUrl: '/sponsors/dummy4.png', linkUrl: '#' },
-  { name: 'ダミースポンサー5', imageUrl: '/sponsors/dummy5.png', linkUrl: '#' },
-  { name: 'ダミースポンサー6', imageUrl: '/sponsors/dummy6.png', linkUrl: '#' },
+  { name: 'スポンサー1', imageUrl: '/sponsors/sponsor1.png', linkUrl: 'https://example.com/sponsor1' },
+  { name: 'スポンサー2', imageUrl: '/sponsors/sponsor2.png', linkUrl: 'https://example.com/sponsor2' },
+  { name: 'スポンサー3', imageUrl: '/sponsors/sponsor3.png', linkUrl: 'https://example.com/sponsor3' },
+  { name: 'スポンサー4', imageUrl: '/sponsors/sponsor4.png', linkUrl: 'https://example.com/sponsor4' },
+  { name: 'スポンサー5', imageUrl: '/sponsors/sponsor5.png', linkUrl: 'https://example.com/sponsor5' },
+  { name: 'スポンサー6', imageUrl: '/sponsors/sponsor6.png', linkUrl: 'https://example.com/sponsor6' },
+  { name: 'スポンサー7', imageUrl: '/sponsors/sponsor7.png', linkUrl: 'https://example.com/sponsor7' },
+  { name: 'スポンサー8', imageUrl: '/sponsors/sponsor8.png', linkUrl: 'https://example.com/sponsor8' },
+  { name: 'スポンサー9', imageUrl: '/sponsors/sponsor9.png', linkUrl: 'https://example.com/sponsor9' },
+  { name: 'スポンサー10', imageUrl: '/sponsors/sponsor10.png', linkUrl: 'https://example.com/sponsor10' },
+  { name: 'スポンサー11', imageUrl: '/sponsors/sponsor11.png', linkUrl: 'https://example.com/sponsor11' },
+  { name: 'スポンサー12', imageUrl: '/sponsors/sponsor12.png', linkUrl: 'https://example.com/sponsor12' },
 ];
 
 const Content = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [showVersionInfo, setShowVersionInfo] = useState(false);
-  const [versionInfo, setVersionInfo] = useState<{
-    version: string;
-    buildDate: string;
-    timestamp: number;
-  } | null>(null);
-
+  
   useEffect(() => {
+    // コンポーネントがマウントされた後にアニメーションのためのクラスを追加
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // バージョン情報を取得
-    const versionManager = VersionManager.getInstance();
-    const currentVersion = versionManager.getCurrentVersion();
     
-    if (currentVersion) {
-      setVersionInfo({
-        version: currentVersion.version,
-        buildDate: currentVersion.buildDate,
-        timestamp: currentVersion.timestamp
-      });
-    } else {
-      // 環境変数から直接取得
-      const envVersion = process.env.REACT_APP_BUILD_VERSION;
-      const envDate = process.env.REACT_APP_BUILD_DATE;
-      const envTimestamp = process.env.REACT_APP_BUILD_TIMESTAMP;
-      
-      if (envVersion && envDate && envTimestamp) {
-        setVersionInfo({
-          version: envVersion,
-          buildDate: envDate,
-          timestamp: parseInt(envTimestamp)
-        });
-      }
-    }
+    return () => clearTimeout(timer);
   }, []);
 
   const clickHandler = () => {
@@ -75,178 +49,84 @@ const Content = () => {
     }
   };
 
-  const formatVersionDisplay = () => {
-    if (!versionInfo) return 'v1.0.0';
-    
-    // タイムスタンプから短縮バージョンを生成
-    const date = new Date(versionInfo.timestamp);
-    const year = date.getFullYear().toString().slice(-2); // 下2桁
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const hour = date.getHours().toString().padStart(2, '0');
-    const minute = date.getMinutes().toString().padStart(2, '0');
-    
-    return `v${year}.${month}.${day}.${hour}${minute}`;
-  };
 
-  const formatDetailedVersion = () => {
-    if (!versionInfo) return '詳細情報なし';
-    
-    const date = new Date(versionInfo.timestamp);
-    return `${versionInfo.version} (${date.toLocaleString('ja-JP')})`;
-  };
 
   return (
     <div className="about-us">
-      <div className={`hero-section ${isVisible ? 'visible' : ''}`}>
-        <div className="hero-gradient"></div>
+      <div className={`hero-image ${isVisible ? 'visible' : ''}`}>
         <div className="hero-content">
-          <div className="hero-title-container">
-            <h1 className="hero-title">NIIGATA CRAFT BEER MAP</h1>
-            {versionInfo && (
-              <div className="version-badge">
-                {formatVersionDisplay()}
-              </div>
-            )}
-          </div>
-          <p className="hero-subtitle">新潟のクラフトビールを、もっと身近に、もっとクールに。</p>
-          <div className="hero-image-container">
-            <img src="/dummy-hero.jpg" alt="新潟クラフトビールイメージ" className="hero-image" />
-          </div>
+          <h1>佐和田料飲店マップ2025</h1>
+          <p>佐渡島の美味しいお店を探そう</p>
         </div>
       </div>
 
       <div className="container">
-        <div className="content-card">
-          <h2 
-            className="section-title clickable-title" 
-            onClick={() => setShowVersionInfo(!showVersionInfo)}
-            title="クリックでアプリ情報を表示"
-          >
-            このマップについて
-          </h2>
-          <p>
-            「NIIGATA CRAFT BEER MAP」は、新潟県内のクラフトビールが飲めるお店・買えるお店を一目で探せるデジタルマップです。<br />
-            新潟の豊かな自然と職人の情熱が生み出すクラフトビールの魅力を、もっと多くの人に知ってほしい。<br />
-            そんな想いからこのマップは生まれました。
-          </p>
-          <p>
-            <strong>どこで飲める？どこで買える？</strong>——そんな疑問をすぐに解決！<br />
-            地元の方も、観光で訪れた方も、新潟のクラフトビールを気軽に楽しめるお店やショップを簡単に見つけられます。
-          </p>
-          <p>
-            新潟のクラフトビール文化を、みんなで盛り上げましょう！
-          </p>
+        <h2>このマップについて</h2>
+        <p>
+          「佐和田料飲店マップ2025」は、新潟県佐渡市佐和田町の料飲店組合が制作した
+          オリジナルデジタルマップです。佐和田町の魅力ある飲食店を紹介し、地域の飲食店への
+          利用促進を目的としています。
+        </p>
+        <p>
+          佐渡市佐和田町には多くの個性的な飲食店があり、島内外からの観光客や地元の方々に
+          様々な料理やお酒を楽しんでいただけます。このマップを使って、ぜひお気に入りのお店を
+          見つけてください。
+        </p>
+
+        <h2>マップの使い方</h2>
+        <p>このマップでは以下の方法でお店を探すことができます：</p>
+        <ul>
+          <li><strong>ホーム画面</strong>：地図上でお店の位置を確認できます。マーカーをタップするとお店の詳細が表示されます。</li>
+          <li><strong>一覧画面</strong>：すべてのお店をリスト形式で表示します。現在地からの距離順に並んでいます。</li>
+          <li><strong>写真から探す</strong>：お店の写真を一覧で見ることができます。気になる写真をタップするとお店の詳細が表示されます。</li>
+          <li><strong>検索機能</strong>：画面上部の検索ボックスからキーワードでお店を検索できます。</li>
+        </ul>
+        <p>
+          各お店の詳細ページでは、営業時間、定休日、住所、写真などの情報を確認できます。
+          また、電話やウェブサイトへのリンクから直接予約も可能です。
+        </p>
+
+        <h2>スポンサー企業</h2>
+        <p>このマップは以下の企業・団体様のご支援により制作されました。</p>
+        
+        <div className="sponsors-grid">
+          {sponsors.map((sponsor, index) => (
+            <div key={index} className="sponsor-item">
+              <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer">
+                <img 
+                  src={sponsor.imageUrl} 
+                  alt={sponsor.name}
+                  onError={(e) => {
+                    // 画像読み込みエラー時の代替表示
+                    (e.target as HTMLImageElement).src = '/sponsors/placeholder.png';
+                  }}
+                />
+                <span className="sponsor-name">{sponsor.name}</span>
+              </a>
+            </div>
+          ))}
         </div>
 
-        <div className="content-card">
-          <h2 className="section-title">マップの使い方</h2>
-          <div className="features-grid">
-            <div className="feature-item">
-              <div className="feature-icon"><FaMapMarkedAlt /></div>
-              <h3>ホーム画面</h3>
-              <p>地図上でビアバーや販売店の位置を確認。マーカーをタップすると詳細が表示されます。</p>
-            </div>
-            <div className="feature-item">
-              <div className="feature-icon"><FaBeer /></div>
-              <h3>一覧画面</h3>
-              <p>すべてのお店・ショップをリスト形式で表示。現在地からの距離順にも並びます。</p>
-            </div>
-            <div className="feature-item">
-              <div className="feature-icon"><FaCamera /></div>
-              <h3>写真から探す</h3>
-              <p>お店やビールの写真を一覧でチェック。気になる写真から詳細へ。</p>
-            </div>
-            <div className="feature-item">
-              <div className="feature-icon"><FaSearch /></div>
-              <h3>検索機能</h3>
-              <p>キーワードやカテゴリで絞り込み検索が可能です。</p>
-            </div>
-          </div>
-          <p className="additional-info">
-            各店舗ページでは、営業時間、定休日、住所、写真、取扱ビールの情報などを確認できます。
-            また、電話や公式サイトへのリンクから直接問い合わせ・予約も可能です。
-          </p>
-        </div>
-
-        <div className="content-card">
-          <h2 className="section-title">スポンサー</h2>
-          <p>本マップは以下のスポンサー様のご支援により運営されています。</p>
-          <div className="sponsors-grid">
-            {sponsors.map((sponsor, index) => (
-              <div key={index} className="sponsor-item">
-                <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer">
-                  <img 
-                    src={sponsor.imageUrl} 
-                    alt={sponsor.name}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/sponsors/placeholder.png';
-                    }}
-                  />
-                  <span className="sponsor-name">{sponsor.name}</span>
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="content-card message-card">
-          <h2 className="section-title">運営メッセージ</h2>
-          <p>
-            新潟のクラフトビールを愛するすべての人へ。<br />
-            このマップが、あなたの「新しい一杯」との出会いのきっかけになれば幸いです。<br />
-            みんなで新潟のクラフトビール文化を盛り上げていきましょう！
-          </p>
-        </div>
+        <h2>佐和田町料飲店組合について</h2>
+        <p>
+          佐和田町料飲店組合は、佐渡市佐和田町にある飲食店の組合組織です。
+          地域の飲食文化の発展と、お客様に安心して楽しんでいただける環境づくりを
+          目指して活動しています。
+        </p>
 
         {config.form_url ? (
-          <div className="content-card">
-            <h2 className="section-title">掲載・データ更新について</h2>
-            <p>掲載情報の追加・修正をご希望の方は、下の「 + 」ボタンからフォームにご入力ください。</p>
+          <>
+            <h2>データの更新について</h2>
+            <p>このアプリのデータを更新するには下の「 + 」ボタンを押してフォームに必要な情報を入力してください。</p>
             <div className="goto-form">
-              <button onClick={clickHandler}>
-                <FaPlus color="#FFFFFF" />
+              <button>
+                <FaPlus color="#FFFFFF" onClick={clickHandler} />
               </button>
             </div>
-          </div>
+          </>
         ) : null}
 
-        {showVersionInfo && (
-          <div className="version-modal-overlay" onClick={() => setShowVersionInfo(false)}>
-            <div className="version-modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="version-modal-header">
-                <h2 className="section-title">
-                  <FaInfoCircle className="section-icon" />
-                  アプリ情報
-                </h2>
-                <button 
-                  className="version-modal-close" 
-                  onClick={() => setShowVersionInfo(false)}
-                  aria-label="閉じる"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="version-details">
-                <div className="version-item">
-                  <span className="version-label">現在のバージョン:</span>
-                  <span className="version-value">{formatVersionDisplay()}</span>
-                </div>
-                <div className="version-item">
-                  <span className="version-label">詳細情報:</span>
-                  <span className="version-value">{formatDetailedVersion()}</span>
-                </div>
-                <div className="version-item">
-                  <span className="version-label">ビルドタイムスタンプ:</span>
-                  <span className="version-value">{versionInfo?.timestamp || 'なし'}</span>
-                </div>
-              </div>
-              <p className="version-note">
-                アプリが更新された場合、自動的にキャッシュがクリアされ最新版が適用されます。
-              </p>
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );

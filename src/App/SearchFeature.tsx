@@ -10,17 +10,17 @@ type SearchFeatureProps = {
 const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, onSelectShop }) => {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedArea, setSelectedArea] = useState<string>('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
   const [isOpenNow, setIsOpenNow] = useState(false);
   const [hasParking, setHasParking] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [areas, setAreas] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [showAreaDropdown, setShowAreaDropdown] = useState(false);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [filteredResults, setFilteredResults] = useState<Pwamap.ShopData[]>([]);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
-  const areaDropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   // クリック外のイベントを監視して、ドロップダウンを閉じる
   useEffect(() => {
@@ -28,8 +28,8 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
       if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
         setShowCategoryDropdown(false);
       }
-      if (areaDropdownRef.current && !areaDropdownRef.current.contains(event.target as Node)) {
-        setShowAreaDropdown(false);
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setShowTagDropdown(false);
       }
     }
     
@@ -68,20 +68,32 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     }).length;
   };
 
-  // エリアごとの件数を計算
-  const getAreaCount = (area: string): number => {
-    return data.filter(shop => shop['エリア'] === area).length;
+  // タグごとの件数を計算
+  const getTagCount = (tag: string): number => {
+    return data.filter(shop => {
+      if (!shop['タグ']) return false;
+      const shopTags = shop['タグ']
+        .split(/,|、|\s+/)
+        .map(t => t.trim())
+        .filter(t => t !== '');
+      return shopTags.includes(tag);
+    }).length;
   };
 
-  // エリア一覧を作成
+  // タグ一覧を作成
   useEffect(() => {
     if (data.length > 0) {
-      const uniqueAreas = Array.from(new Set(data
-        .map(shop => shop['エリア'])
-        .filter(Boolean)))
+      const allTags = data
+        .map(shop => shop['タグ'])
+        .filter(Boolean)
+        .flatMap(tag => tag.split(/,|、|\s+/))
+        .map(tag => tag.trim())
+        .filter(tag => tag !== '');
+      
+      const uniqueTags = Array.from(new Set(allTags))
         .sort();
       
-      setAreas(uniqueAreas);
+      setTags(uniqueTags);
     }
   }, [data]);
 
@@ -163,8 +175,13 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
         if (!shopCategories.includes(selectedCategory)) return false;
       }
 
-      // エリアフィルター
-      if (selectedArea && shop['エリア'] !== selectedArea) return false;
+      // タグフィルター
+      if (selectedTag) {
+        const shopTags = shop['タグ']
+          ? shop['タグ'].split(/,|、|\s+/).map(tag => tag.trim())
+          : [];
+        if (!shopTags.includes(selectedTag)) return false;
+      }
 
       // 営業時間フィルター
       if (isOpenNow && !isShopOpen(shop)) return false;
@@ -177,7 +194,7 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
 
     setFilteredResults(filtered);
     onSearchResults(filtered);
-  }, [data, query, selectedCategory, selectedArea, isOpenNow, hasParking, onSearchResults]);
+  }, [data, query, selectedCategory, selectedTag, isOpenNow, hasParking, onSearchResults]);
 
   // フィルター条件が変わったら再フィルタリング
   useEffect(() => {
@@ -203,7 +220,7 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     
     // 「すべて」選択時は全てのフィルター条件をリセット
     if (category === '') {
-      setSelectedArea('');
+      setSelectedTag('');
       setIsOpenNow(false);
       setHasParking(false);
       setQuery('');
@@ -213,13 +230,13 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     }
   };
 
-  // エリア選択ハンドラー
-  const handleAreaSelect = (area: string) => {
-    setSelectedArea(area);
-    setShowAreaDropdown(false);
+  // タグ選択ハンドラー
+  const handleTagSelect = (tag: string) => {
+    setSelectedTag(tag);
+    setShowTagDropdown(false);
     
     // 「すべて」選択時は全てのフィルター条件をリセット
-    if (area === '') {
+    if (tag === '') {
       setSelectedCategory('');
       setIsOpenNow(false);
       setHasParking(false);
@@ -296,32 +313,32 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
             )}
           </div>
           
-          {/* エリアドロップダウン */}
-          <div className="filter-item area-filter" ref={areaDropdownRef}>
+          {/* タグドロップダウン */}
+          <div className="filter-item tag-filter" ref={tagDropdownRef}>
             <div 
-              className={`custom-dropdown-header ${selectedArea !== '' ? 'active' : ''}`}
-              onClick={() => setShowAreaDropdown(!showAreaDropdown)}
+              className={`custom-dropdown-header ${selectedTag !== '' ? 'active' : ''}`}
+              onClick={() => setShowTagDropdown(!showTagDropdown)}
             >
-              {selectedArea === '' ? 'エリア' : selectedArea}
+              {selectedTag === '' ? 'タグ' : selectedTag}
               <span className="dropdown-icon">▼</span>
             </div>
-            {showAreaDropdown && (
+            {showTagDropdown && (
               <div className="custom-dropdown-list">
                 <div 
                   className="custom-dropdown-item"
-                  onClick={() => handleAreaSelect('')}
+                  onClick={() => handleTagSelect('')}
                 >
                   <span className="dropdown-item-text">すべて</span>
                   <span className="dropdown-item-count">{data.length}</span>
                 </div>
-                {areas.map((area) => (
+                {tags.map((tag) => (
                   <div
-                    key={area}
+                    key={tag}
                     className="custom-dropdown-item"
-                    onClick={() => handleAreaSelect(area)}
+                    onClick={() => handleTagSelect(tag)}
                   >
-                    <span className="dropdown-item-text">{area}</span>
-                    <span className="dropdown-item-count">{getAreaCount(area)}</span>
+                    <span className="dropdown-item-text">{tag}</span>
+                    <span className="dropdown-item-count">{getTagCount(tag)}</span>
                   </div>
                 ))}
               </div>

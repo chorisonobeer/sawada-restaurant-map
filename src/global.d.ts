@@ -25,6 +25,8 @@ declare namespace Pwamap {
     '創業年月': string;
     'TEL': string;
     '駐車場': string;
+    '予約有無': string;
+    'タグ': string;
   }
 
   type LngLat = [number, number]

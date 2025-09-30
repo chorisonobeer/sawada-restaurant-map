@@ -1,3 +1,4 @@
+# 佐和田料飲店マップ - robots.txt
 User-agent: *
 Allow: /
 
