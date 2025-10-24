@@ -106,9 +106,10 @@ const Shop: React.FC<Props> = (props) => {
     const imageKeys = ['画像', '画像2', '画像3', '画像4', '画像5'];
     return imageKeys
       .map(key => props.shop[key])
-      .filter(img => img && img.trim() !== '')
+      .map(img => (img || '').trim())
+      .filter(img => img !== '')
       .map(img => {
-        if (img.startsWith('http')) {
+        if (img.startsWith('http') || img.startsWith('/')) {
           return img;
         } else {
           return `/${img}`;
