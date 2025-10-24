@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useContext } from "react";
+import React, { useEffect, useRef, useState, useContext, useMemo } from "react";
 import Links from "./Links";
 import "./Shop.scss";
 import { AiOutlineClose } from "react-icons/ai";
@@ -102,144 +102,137 @@ const Shop: React.FC<Props> = (props) => {
   };
 
   // 画像データの処理
-  const getImages = () => {
+  const images = useMemo(() => {
     const imageKeys = ['画像', '画像2', '画像3', '画像4', '画像5'];
     return imageKeys
       .map(key => props.shop[key])
       .map(img => (img || '').trim())
       .filter(img => img !== '')
-      .map(img => {
-        if (img.startsWith('http') || img.startsWith('/')) {
-          return img;
-        } else {
-          return `/${img}`;
-        }
-      });
-  };
-
-  const images = getImages();
+      .map(img => (img.startsWith('http') || img.startsWith('/')) ? img : `/${img}`);
+  }, [props.shop]);
+  
   // 詳細画像のロード状態管理（スケルトン表示制御）
   const [loaded, setLoaded] = useState<boolean[]>([]);
   useEffect(() => {
-    setLoaded(images.map(() => false));
+    setLoaded(Array(images.length).fill(false));
   }, [images]);
 
-  const handleImageLoad = (idx: number) => {
-    setLoaded(prev => {
-      const next = [...prev];
-      next[idx] = true;
-      return next;
-    });
-  };
+    const handleImageLoad = (idx: number) => {
+      setLoaded(prev => {
+        const next = [...prev];
+        next[idx] = true;
+        return next;
+      });
+    };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, idx: number) => {
-    (e.currentTarget as HTMLImageElement).style.display = 'none';
-    setLoaded(prev => {
-      const next = [...prev];
-      next[idx] = true;
-      return next;
-    });
-  };
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, idx: number) => {
+      (e.currentTarget as HTMLImageElement).style.display = 'none';
+      setLoaded(prev => {
+        const next = [...prev];
+        next[idx] = true;
+        return next;
+      });
+    };
 
-  return (
-    <div
-      className={`shop-single ${isClosing ? 'closing' : ''}`}
-      ref={containerRef}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
-      <div className="head">
-        <button onClick={handleClose}>
-          <AiOutlineClose size="16px" color="#FFFFFF" /> 閉じる
-        </button>
-      </div>
-      <div className="container">
-        <h2 className="shop-title">{spotName}</h2>
-
-        <div className="tag-box">
-          {categories.map((category, index) => (
-            <Link key={`cat-${index}`} to={`/list?category=${category}`}>
-              <span className="category">{category}</span>
-            </Link>
-          ))}
-          {distanceTipText && (
-            <span className="distance">現在位置から {distanceTipText}</span>
-          )}
+    return (
+      <div
+        className={`shop-single ${isClosing ? 'closing' : ''}`}
+        ref={containerRef}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="head">
+          <button onClick={handleClose}>
+            <AiOutlineClose size="16px" color="#FFFFFF" /> 閉じる
+          </button>
         </div>
+        <div className="container">
+          <h2 className="shop-title">{spotName}</h2>
 
-        <Links data={props.shop} />
-
-        <div className="shop-route">
-          <a 
-            href={getGoogleMapsDirectionsUrl()} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="route-link"
-          >
-            この場所に行くルート
-          </a>
-        </div>
-
-        <div className="shop-info-box">
-          <div className="info-item">
-            <span className="info-label">営業時間:</span> {hours}
-          </div>
-          <div className="info-item">
-            <span className="info-label">定休日:</span> {closed}
-          </div>
-          <div className="info-item">
-            <span className="info-label">住所:</span> {address}
-          </div>
-        </div>
-
-        {images.length > 0 && (
-          <div className="shop-images-grid">
-            {images.map((imgUrl, index) => (
-              <div
-                key={`image-${index}`}
-                className={`shop-image-item ${loaded[index] ? 'loaded' : 'loading'}`}
-              >
-                <div className="skeleton" />
-                <img
-                  src={imgUrl}
-                  alt={`${props.shop['スポット名']}の写真${index+1}`}
-                  className="shop-image"
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  width={400}
-                  height={300}
-                  onLoad={() => handleImageLoad(index)}
-                  onError={(e) => handleImageError(e, index)}
-                />
-              </div>
+          <div className="tag-box">
+            {categories.map((category, index) => (
+              <Link key={`cat-${index}`} to={`/list?category=${category}`}>
+                <span className="category">{category}</span>
+              </Link>
             ))}
+            {distanceTipText && (
+              <span className="distance">現在位置から {distanceTipText}</span>
+            )}
           </div>
-        )}
 
-        {content && (
-          <p style={{ margin: "24px 0", wordBreak: "break-all" }}>{content}</p>
-        )}
+          <Links data={props.shop} />
 
-        <div className="action-buttons">
-          {tel && (
-            <a href={`tel:${tel}`} className="action-button phone-button">
-              電話で予約する
-            </a>
-          )}
-          {site && (
-            <a
-              href={site}
-              target="_blank"
+          <div className="shop-route">
+            <a 
+              href={getGoogleMapsDirectionsUrl()} 
+              target="_blank" 
               rel="noopener noreferrer"
-              className="action-button web-button"
+              className="route-link"
             >
-              ネットで予約する
+              この場所に行くルート
             </a>
+          </div>
+
+          <div className="shop-info-box">
+            <div className="info-item">
+              <span className="info-label">営業時間:</span> {hours}
+            </div>
+            <div className="info-item">
+              <span className="info-label">定休日:</span> {closed}
+            </div>
+            <div className="info-item">
+              <span className="info-label">住所:</span> {address}
+            </div>
+          </div>
+
+          {images.length > 0 && (
+            <div className="shop-images-grid">
+              {images.map((imgUrl, index) => (
+                <div
+                  key={`image-${index}`}
+                  className={`shop-image-item ${loaded[index] ? 'loaded' : 'loading'}`}
+                >
+                  {!loaded[index] && <div className="skeleton" />}
+                  <img
+                    src={imgUrl}
+                    alt={`${props.shop['スポット名']}の写真${index+1}`}
+                    className="shop-image"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    width={400}
+                    height={300}
+                    onLoad={() => handleImageLoad(index)}
+                    onError={(e) => handleImageError(e, index)}
+                  />
+                </div>
+              ))}
+            </div>
           )}
+
+          {content && (
+            <p style={{ margin: "24px 0", wordBreak: "break-all" }}>{content}</p>
+          )}
+
+          <div className="action-buttons">
+            {tel && (
+              <a href={`tel:${tel}`} className="action-button phone-button">
+                電話で予約する
+              </a>
+            )}
+            {site && (
+              <a
+                href={site}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="action-button web-button"
+              >
+                ネットで予約する
+              </a>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
 };
 
 export default Shop;
