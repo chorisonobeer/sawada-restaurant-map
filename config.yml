@@ -3,8 +3,11 @@ description: 新潟県佐渡市佐和田町料飲店組合加盟店のMAPです
 data_url: https://docs.google.com/spreadsheets/d/e/2PACX-1vRvUHoy7wWdYt4WjEy3fNyD2P89GtkTzuw45ILKKsDMnxQK_MpScN_8X98LFGC7Eoeguyk0ybGVUblZ/pub?gid=1957425126&single=true&output=csv
 form_url:
 logo_image_url: /logo.svg
-background_image_url: /back.jpg
+background_image_url: /back.webp
 primary_color: "#00A0E6"
 orderby: distance
 # イベント情報表示用のCSV URL
 event_data_url: https://docs.google.com/spreadsheets/d/e/2PACX-1vRvUHoy7wWdYt4WjEy3fNyD2P89GtkTzuw45ILKKsDMnxQK_MpScN_8X98LFGC7Eoeguyk0ybGVUblZ/pub?gid=648480331&single=true&output=csv
+image_proxy_url: /.netlify/functions/image-proxy
+# 開発環境用（ローカルプロキシ）
+image_proxy_url_dev: http://localhost:5050/image

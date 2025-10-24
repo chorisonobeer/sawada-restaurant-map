@@ -7,37 +7,20 @@
   const versionKey = 'app_version';
   const lastVersion = localStorage.getItem(versionKey);
   
-  // バージョンが変更されている場合、キャッシュをクリア
+  // バージョンが変更されている場合、記録のみ（非破壊）
   if (lastVersion && lastVersion !== currentVersion.toString()) {
-    console.log('New version detected, clearing cache...');
-    
-    // Service Workerのキャッシュをクリア
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-    
-    // ブラウザキャッシュをクリア
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) {
-          caches.delete(name);
-        }
-      });
-    }
-    
-    // ローカルストレージの一部をクリア（必要に応じて）
-    localStorage.removeItem('eventListCache');
-    sessionStorage.clear();
-    
-    // 新しいバージョンを保存
+    console.log('🆕 New version detected. Recording without clearing caches or reloading.');
+
+    // 新しいバージョンを保存（破壊的操作なし）
     localStorage.setItem(versionKey, currentVersion.toString());
-    
-    // ページをリロード
-    window.location.reload(true);
+
+    // クライアント側で利用できる軽量通知フラグを設定（任意表示用）
+    try {
+      window.__APP_VERSION_UPDATE__ = { previous: lastVersion, current: currentVersion.toString(), ts: Date.now() };
+      window.dispatchEvent(new CustomEvent('app-version-updated', { detail: window.__APP_VERSION_UPDATE__ }));
+    } catch (e) {
+      // 例外は無視
+    }
   } else if (!lastVersion) {
     // 初回訪問時
     localStorage.setItem(versionKey, currentVersion.toString());

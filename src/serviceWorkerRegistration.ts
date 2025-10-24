@@ -82,16 +82,14 @@ function registerValidSW(swUrl: string, config?: Config) {
               // At this point, the updated precached content has been fetched,
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
-              console.log('🔄 New content is available - applying immediately');
+              console.log('🔄 New content is available - waiting for user action');
 
-              // 即座に新しいService Workerを有効化
-              installingWorker.postMessage({ type: 'SKIP_WAITING' });
-              
-              // 少し待ってからページをリロード
-              setTimeout(() => {
-                console.log('🔄 Reloading to apply updates');
-                window.location.reload();
-              }, 1000);
+              // 非強制: クライアントへ更新利用可能イベントを通知
+              try {
+                window.dispatchEvent(new CustomEvent('sw-update-available', { detail: registration }));
+              } catch (e) {
+                // 例外は無視
+              }
 
               // Execute callback
               if (config && config.onUpdate) {

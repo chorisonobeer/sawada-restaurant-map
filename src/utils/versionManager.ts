@@ -122,10 +122,10 @@ class VersionManager {
    */
   private isUpdateAvailable(serverVersion: VersionInfo): boolean {
     if (!this.currentVersion) {
-      return true; // 現在のバージョンが不明な場合は更新
+      // 現在バージョンが不明な場合は更新扱いにしない（安全側）
+      return false;
     }
 
-    // タイムスタンプベースの比較
     return serverVersion.timestamp > this.currentVersion.timestamp;
   }
 
@@ -133,25 +133,23 @@ class VersionManager {
    * アップデートを処理
    */
   private async handleUpdate(newVersion: VersionInfo): Promise<void> {
-    console.log('🔄 Handling update...');
+    console.log('🔄 Handling update (non-destructive)...');
     
-    // 古いキャッシュをクリア
-    await this.clearAllCaches();
+    // 非破壊: キャッシュやローカルデータの削除は行わない
+    // await this.clearAllCaches(); // disabled
+    // this.clearLocalData(); // disabled
     
-    // ローカルストレージの古い情報をクリア
-    this.clearLocalData();
-    
-    // Service Workerを更新
+    // Service Workerを更新（skipWaiting/clientsClaimはSW側で対応）
     await this.updateServiceWorker();
     
     // バージョン情報を保存
     this.saveVersionInfo(newVersion);
     
-    // 強制リロードを実行
+    // 強制リロードは行わず、コールバックがあれば通知のみ
     if (this.forceUpdateCallback) {
       this.forceUpdateCallback();
     } else {
-      this.forceReload();
+      console.log('✅ Update applied. Waiting for user-initiated reload.');
     }
   }
 
@@ -160,31 +158,11 @@ class VersionManager {
    */
   private async clearAllCaches(): Promise<void> {
     try {
-      console.log('🧹 Clearing all caches...');
-      
-      // Service Worker キャッシュをクリア
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(
-          cacheNames.map(cacheName => {
-            console.log(`🗑️ Deleting cache: ${cacheName}`);
-            return caches.delete(cacheName);
-          })
-        );
-      }
-      
-      // sessionStorage をクリア
-      sessionStorage.clear();
-      
-      // localStorage の特定のキーをクリア（必要に応じて）
-      const keysToRemove = ['eventListCache', 'mapCache', 'userPreferences'];
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-      });
-      
-      console.log('✅ All caches cleared');
+      console.log('🧹 Skipping destructive cache clear (non-destructive policy)');
+      // 破壊的なキャッシュ削除は廃止
+      // 旧キャッシュの整理はService Worker側のバージョニングで管理
     } catch (error) {
-      console.error('❌ Error clearing caches:', error);
+      console.error('❌ Error in cache management:', error);
     }
   }
 
@@ -193,12 +171,8 @@ class VersionManager {
    */
   private clearLocalData(): void {
     try {
-      // sessionStorageの特定のキャッシュをクリア
-      sessionStorage.removeItem('eventListCache');
-      sessionStorage.removeItem('shopListCache');
-      sessionStorage.removeItem('lastUpdateCheck');
-      
-      console.log('🧹 Local data cleared');
+      console.log('🧹 Skipping local data clear (non-destructive policy)');
+      // データ削除は行わない（常に表示を維持する）
     } catch (error) {
       console.error('❌ Error clearing local data:', error);
     }

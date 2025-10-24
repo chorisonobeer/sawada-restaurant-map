@@ -9,96 +9,88 @@ import Papa from "papaparse";
 import config from "../config.json";
 import LoadingSpinner from "./LoadingSpinner";
 import "./Events.scss";
+import { getJSON, setJSON } from "../utils/idbStore";
 
 type EventData = Pwamap.EventData & {
   "参加ブルワリー"?: string;
 };
 
 const Events: React.FC = () => {
-  // sessionStorageキャッシュを同期的にチェックして初期状態を設定
-  const getCachedData = () => {
-    try {
-      const cached = sessionStorage.getItem("eventListCache");
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const [eventList, setEventList] = useState<EventData[]>(() => getCachedData());
-  const [selectedEvent, setSelectedEvent] = useState<EventData | undefined>(undefined);
-  const [loading, setLoading] = useState<boolean>(() => {
-    // キャッシュがある場合は初期ローディングをスキップ
-    const cached = sessionStorage.getItem("eventListCache");
-    return !cached;
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [imageModalUrl, setImageModalUrl] = useState<string | null>(null);
-  const [expandedBreweries, setExpandedBreweries] = useState<{[key: number]: boolean}>({});
+  // IndexedDBベースのキャッシュを使用するため同期チェック関数は不要
+  const [eventList, setEventList] = useState<EventData[]>([]);
+   const [selectedEvent, setSelectedEvent] = useState<EventData | undefined>(undefined);
+   const [loading, setLoading] = useState<boolean>(true);
+   const [error, setError] = useState<string | null>(null);
+   const [imageModalUrl, setImageModalUrl] = useState<string | null>(null);
+   const [expandedBreweries, setExpandedBreweries] = useState<{[key: number]: boolean}>({});
 
   useEffect(() => {
     // sessionStorageキャッシュ確認
     const cacheKey = "eventListCache";
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        // キャッシュがある場合はローディング状態を即座に解除
-        if (loading) {
-          setLoading(false);
-        }
-        // バックグラウンドで最新データ取得
-        fetch(config.event_data_url)
-          .then((response) => {
-            if (!response.ok) throw new Error("イベントデータの取得に失敗しました");
-            return response.text();
-          })
-          .then((csv) => {
-            Papa.parse(csv, {
-              header: true,
-              dynamicTyping: true,
-              complete: (results) => {
-                const features = results.data as EventData[];
-                const nextEventList: EventData[] = [];
-                const urlKeys: (keyof EventData)[] = ["公式サイト", "Instagram", "Facebook", "X"];
-                for (let i = 0; i < features.length; i++) {
-                  const feature = { ...features[i] };
-                  if (!feature["イベント名"] || !feature["開催期間"]) continue;
-                  urlKeys.forEach(key => {
-                    let value = feature[key] as string | undefined;
-                    if (value && typeof value === 'string') {
-                      value = value.trim();
-                      if (value.startsWith('"') && value.endsWith('"')) {
-                        value = value.substring(1, value.length - 1);
-                      }
-                      if (value.startsWith("'") && value.endsWith("'")) {
-                        value = value.substring(1, value.length - 1);
-                      }
-                      if (value.startsWith('`') && value.endsWith('`')) {
-                        value = value.substring(1, value.length - 1);
-                      }
-                      (feature[key] as string) = value.trim();
-                    }
-                  });
-                  const event = { index: i, ...feature };
-                  nextEventList.push(event);
-                }
-                // 差分があればキャッシュ・state更新
-                if (JSON.stringify(parsed) !== JSON.stringify(nextEventList)) {
-                  setEventList(nextEventList);
-                  sessionStorage.setItem(cacheKey, JSON.stringify(nextEventList));
-                }
-              },
-              error: () => {},
-            });
-          })
-          .catch(() => {});
-        return;
-      } catch (e) {
-        // パース失敗時は通常フロー
-      }
+    setError(null);
+    if (!config.event_data_url) {
+      setLoading(false);
+      return;
     }
-    // キャッシュなし時は通常取得（loadingは既にtrueに設定済み）
+    
+    (async () => {
+      try {
+        const cached = await getJSON<EventData[]>(cacheKey);
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+          setEventList(cached);
+          if (loading) setLoading(false);
+          // バックグラウンドで最新データ取得
+          fetch(config.event_data_url)
+            .then((response) => {
+              if (!response.ok) throw new Error("イベントデータの取得に失敗しました");
+              return response.text();
+            })
+            .then((csv) => {
+              Papa.parse(csv, {
+                header: true,
+                dynamicTyping: true,
+                complete: async (results) => {
+                  const features = results.data as EventData[];
+                  const nextEventList: EventData[] = [];
+                  const urlKeys: (keyof EventData)[] = ["公式サイト", "Instagram", "Facebook", "X"];
+                  for (let i = 0; i < features.length; i++) {
+                    const feature = { ...features[i] };
+                    if (!feature["イベント名"] || !feature["開催期間"]) continue;
+                    urlKeys.forEach(key => {
+                      let value = feature[key] as string | undefined;
+                      if (value && typeof value === 'string') {
+                        value = value.trim();
+                        if (value.startsWith('"') && value.endsWith('"')) {
+                          value = value.substring(1, value.length - 1);
+                        }
+                        if (value.startsWith("'") && value.endsWith("'")) {
+                          value = value.substring(1, value.length - 1);
+                        }
+                        if (value.startsWith('`') && value.endsWith('`')) {
+                          value = value.substring(1, value.length - 1);
+                        }
+                        (feature[key] as string) = value.trim();
+                      }
+                    });
+                    const event = { index: i, ...feature };
+                    nextEventList.push(event);
+                  }
+                  if (JSON.stringify(cached) !== JSON.stringify(nextEventList)) {
+                    setEventList(nextEventList);
+                    await setJSON(cacheKey, nextEventList);
+                  }
+                },
+                error: () => {},
+              });
+            })
+            .catch(() => {});
+          return;
+        }
+      } catch (e) {
+        // キャッシュ取得失敗時は通常フロー
+      }
+    
+    // キャッシュなし時は通常取得
     fetch(config.event_data_url)
       .then((response) => {
         if (!response.ok) throw new Error("イベントデータの取得に失敗しました");
@@ -108,7 +100,7 @@ const Events: React.FC = () => {
         Papa.parse(csv, {
           header: true,
           dynamicTyping: true,
-          complete: (results) => {
+          complete: async (results) => {
             const features = results.data as EventData[];
             const nextEventList: EventData[] = [];
             const urlKeys: (keyof EventData)[] = ["公式サイト", "Instagram", "Facebook", "X"];
@@ -135,7 +127,7 @@ const Events: React.FC = () => {
               nextEventList.push(event);
             }
             setEventList(nextEventList);
-            sessionStorage.setItem(cacheKey, JSON.stringify(nextEventList));
+            await setJSON(cacheKey, nextEventList);
             setLoading(false);
           },
           error: () => {
@@ -148,6 +140,7 @@ const Events: React.FC = () => {
         setError(e.message);
         setLoading(false);
       });
+    })();
   }, [loading]);
 
   const showEventDetail = (event: EventData) => {

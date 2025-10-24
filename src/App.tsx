@@ -15,8 +15,9 @@ import AboutUs from './App/AboutUs';
 import Events from './App/Events';
 import Tabbar from './App/Tabbar';
 import LazyMap from './App/LazyMap';
-import config from "./config.json";
+import config from './config.json';
 import './App.scss';
+import { getJSON, setJSON } from './utils/idbStore';
 
 const App: React.FC = React.memo(() => {
   const [shopList, setShopList] = useState<Pwamap.ShopData[]>([]);
@@ -24,6 +25,29 @@ const App: React.FC = React.memo(() => {
   const [selectedShop, setSelectedShop] = useState<Pwamap.ShopData | undefined>(undefined);
   const [filteredShops, setFilteredShops] = useState<Pwamap.ShopData[]>([]);
   const location = useLocation();
+
+  // Google Drive 画像URLをプロキシ化
+  const transformImageUrl = useCallback((url?: string): string | undefined => {
+    if (!url) return url;
+    const proxyBase = (config as any).image_proxy_url as string | undefined;
+    const patterns = [
+      /https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/,
+    ];
+    let id: string | null = null;
+    for (const re of patterns) {
+      const m = url.match(re);
+      if (m && m[1]) { id = m[1]; break; }
+    }
+    if (!id) return url;
+    // プロキシ設定があれば必ずプロキシを使う（開発はローカル、 本番はNetlify Functions）
+    if (proxyBase) {
+      return `${proxyBase}?id=${id}`;
+    }
+    // プロキシ未設定なら直リンク
+    return `https://drive.google.com/uc?id=${encodeURIComponent(id)}`;
+  }, []);
 
   const sortShopList = useCallback((shopList: Pwamap.ShopData[]) => {
     return new Promise<Pwamap.ShopData[]>((resolve) => {
@@ -34,88 +58,103 @@ const App: React.FC = React.memo(() => {
     });
   }, []);
 
+
   useEffect(() => {
     setError("");
     const cacheKey = "shopListCache";
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
+
+    (async () => {
       try {
-        const parsed = JSON.parse(cached);
-        setShopList(parsed);
-        // バックグラウンドで最新データ取得
-        fetch(config.data_url)
-          .then((response) => {
-            if (!response.ok) throw new Error("データの取得に失敗しました");
-            return response.text();
-          })
-          .then((data) => {
-            Papa.parse(data, {
-              header: true,
-              complete: (results) => {
-                const features = results.data;
-                const nextShopList: Pwamap.ShopData[] = [];
-                for (let i = 0; i < features.length; i++) {
-                  const feature = features[i] as Pwamap.ShopData;
-                  if (!feature['緯度'] || !feature['経度'] || !feature['スポット名']) continue;
-                  if (!feature['緯度'].match(/^[0-9]+(\.[0-9]+)?$/)) continue;
-                  if (!feature['経度'].match(/^[0-9]+(\.[0-9]+)?$/)) continue;
-                  const shop = { index: i, ...feature };
-                  nextShopList.push(shop);
-                }
-                sortShopList(nextShopList).then((sortedShopList) => {
-                  if (JSON.stringify(parsed) !== JSON.stringify(sortedShopList)) {
-                    setShopList(sortedShopList);
-                    sessionStorage.setItem(cacheKey, JSON.stringify(sortedShopList));
+        const cached = await getJSON<Pwamap.ShopData[]>(cacheKey);
+        if (cached && Array.isArray(cached) && cached.length > 0) {
+          setShopList(cached);
+          // バックグラウンドで最新データ取得
+          fetch(config.data_url)
+            .then((response) => {
+              if (!response.ok) throw new Error("データの取得に失敗しました");
+              return response.text();
+            })
+            .then((data) => {
+              Papa.parse(data, {
+                header: true,
+                complete: (results) => {
+                  const features = results.data;
+                  const nextShopList: Pwamap.ShopData[] = [];
+                  for (let i = 0; i < features.length; i++) {
+                    const feature = features[i] as Pwamap.ShopData;
+                    const name = (feature['スポット名'] || '').toString().trim();
+                    const rawLat = (feature['緯度'] || '').toString();
+                    const rawLng = (feature['経度'] || '').toString();
+                    const latStr = require('./lib/zen2han').default(rawLat).trim();
+                    const lngStr = require('./lib/zen2han').default(rawLng).trim();
+                    const lat = parseFloat(latStr);
+                    const lng = parseFloat(lngStr);
+                    if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+                    const imageRaw = (feature['画像'] || '').toString().trim();
+                    const imageUrl = transformImageUrl(imageRaw) || imageRaw;
+                    const shop = { index: i, ...feature, 画像: imageUrl, 緯度: String(lat), 経度: String(lng) };
+                    nextShopList.push(shop);
                   }
-                });
-              },
-              error: () => {
-                setError("CSVパースエラー");
-              }
+                  sortShopList(nextShopList).then(async (sortedShopList) => {
+                    setShopList(sortedShopList);
+                    await setJSON(cacheKey, sortedShopList);
+                  });
+                },
+                error: () => {
+                  setError("CSVパースエラー");
+                }
+              });
+            })
+            .catch((e) => {
+              setError(e.message);
             });
-          })
-          .catch((e) => {
-            setError(e.message);
-          });
-        return;
-      } catch (e) {
-        // パース失敗時は通常フロー
-      }
-    }
-    // キャッシュなし時は通常取得
-    fetch(config.data_url)
-      .then((response) => {
-        if (!response.ok) throw new Error("データの取得に失敗しました");
-        return response.text();
-      })
-      .then((data) => {
-        Papa.parse(data, {
-          header: true,
-          complete: (results) => {
-            const features = results.data;
-            const nextShopList: Pwamap.ShopData[] = [];
-            for (let i = 0; i < features.length; i++) {
-              const feature = features[i] as Pwamap.ShopData;
-              if (!feature['緯度'] || !feature['経度'] || !feature['スポット名']) continue;
-              if (!feature['緯度'].match(/^[0-9]+(\.[0-9]+)?$/)) continue;
-              if (!feature['経度'].match(/^[0-9]+(\.[0-9]+)?$/)) continue;
-              const shop = { index: i, ...feature };
-              nextShopList.push(shop);
-            }
-            sortShopList(nextShopList).then((sortedShopList) => {
-              setShopList(sortedShopList);
-              sessionStorage.setItem(cacheKey, JSON.stringify(sortedShopList));
+        } else {
+          // キャッシュがない場合
+          fetch(config.data_url)
+            .then((response) => {
+              if (!response.ok) throw new Error("データの取得に失敗しました");
+              return response.text();
+            })
+            .then((data) => {
+              Papa.parse(data, {
+                header: true,
+                complete: (results) => {
+                  const features = results.data;
+                  const nextShopList: Pwamap.ShopData[] = [];
+                  for (let i = 0; i < features.length; i++) {
+                    const feature = features[i] as Pwamap.ShopData;
+                    const name = (feature['スポット名'] || '').toString().trim();
+                    const rawLat = (feature['緯度'] || '').toString();
+                    const rawLng = (feature['経度'] || '').toString();
+                    const latStr = require('./lib/zen2han').default(rawLat).trim();
+                    const lngStr = require('./lib/zen2han').default(rawLng).trim();
+                    const lat = parseFloat(latStr);
+                    const lng = parseFloat(lngStr);
+                    if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+                    const imageRaw = (feature['画像'] || '').toString().trim();
+                    const imageUrl = transformImageUrl(imageRaw) || imageRaw;
+                    const shop = { index: i, ...feature, 画像: imageUrl, 緯度: String(lat), 経度: String(lng) };
+                    nextShopList.push(shop);
+                  }
+                  sortShopList(nextShopList).then(async (sortedShopList) => {
+                    setShopList(sortedShopList);
+                    await setJSON(cacheKey, sortedShopList);
+                  });
+                },
+                error: () => {
+                  setError("CSVパースエラー");
+                }
+              });
+            })
+            .catch((e) => {
+              setError(e.message);
             });
-          },
-          error: () => {
-            setError("CSVパースエラー");
-          }
-        });
-      })
-      .catch((e) => {
+        }
+      } catch (e: any) {
         setError(e.message);
-      });
-  }, [sortShopList]);
+      }
+    })();
+  }, [sortShopList, transformImageUrl]);
 
   // 店舗選択ハンドラ
   const handleSelectShop = useCallback((shop: Pwamap.ShopData) => {

@@ -41,6 +41,12 @@ const envText =
     .map((key) => `REACT_APP_${key.toUpperCase()}="${config[key]}"`)
     .join("\n") + "\n";
 
+// NODE_ENVに応じて開発用プロキシURLに切り替え
+const isDev = (process.env.NODE_ENV === 'development') || (process.env.npm_lifecycle_event === 'start');
+if (isDev && config.image_proxy_url_dev) {
+  config.image_proxy_url = config.image_proxy_url_dev;
+}
+
 // 全ての設定は src/config.json として出力する
 fs.writeFileSync(distConfigFilePath, JSON.stringify(config, null, 2));
 

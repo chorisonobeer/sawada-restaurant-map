@@ -26,6 +26,11 @@ const Content = (props: Props) => {
   const image = props.data['画像'];
   const isCategoryPage = props.queryCategory ? true : false;
 
+  // 表示項目
+  const hours = props.data['営業時間'] || '営業時間不明';
+  const closed = props.data['定休日'] || '定休日不明';
+  const intro = props.data['紹介文'] || '';
+
   return (
     <div className="shop-link">
       {props.data['エリア'] && (
@@ -48,7 +53,24 @@ const Content = (props: Props) => {
           <span className="distance">現在位置から {distanceTipText}</span>
         </span>
       </div>
-      <div style={{ margin: "10px 10px 10px 0" }}>
+
+      {/* 画像の上部に四角枠で情報を配置 */}
+      <div className="info-box" onClick={clickHandler}>
+        <div className="info-row">
+          <span className="info-label">営業時間</span>
+          <span className="info-value">{hours}</span>
+        </div>
+        <div className="info-row">
+          <span className="info-label">定休日</span>
+          <span className="info-value">{closed}</span>
+        </div>
+        <div className="info-row intro">
+          <span className="info-label">紹介文</span>
+          <span className="info-value">{intro}</span>
+        </div>
+      </div>
+
+      <div className="image-box" style={{ margin: "10px 10px 10px 0" }}>
         { image && <img src={image} alt={props.data['スポット名']} onClick={clickHandler}/> }
       </div>
       <div className="right" onClick={clickHandler}>

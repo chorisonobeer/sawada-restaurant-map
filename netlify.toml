@@ -6,6 +6,8 @@
   command = "npm run build"
   # 公開ディレクトリ
   publish = "build"
+  # Functionsディレクトリ
+  functions = "netlify/functions"
 
 # プロダクション環境の設定
 [context.production]
