@@ -102,48 +102,75 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
       });
     }
     if (!isLayerInitialized) {
+      // 既存の単一レイヤーを2レイヤー構成に変更（視認性を高める）
       map.addLayer({
-        id: 'shop-points',
+        id: 'shop-points-outer',
         type: 'circle',
         source: 'shops',
         filter: ['all', ['==', '$type', 'Point']],
         paint: {
-          'circle-radius': 13,
+          'circle-radius': 16,
           'circle-color': [
             'match',
             ['get', 'カテゴリ'],
             ...matchPairs,
-            categoryColors['その他'], // デフォルト値
+            categoryColors['その他'],
           ],
-          'circle-opacity': 0.4,
-          'circle-stroke-width': 2,
+          'circle-opacity': 0.35,
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-opacity': 1,
+          'circle-blur': 0.4,
+        },
+      });
+      map.addLayer({
+        id: 'shop-points-inner',
+        type: 'circle',
+        source: 'shops',
+        filter: ['all', ['==', '$type', 'Point']],
+        paint: {
+          'circle-radius': 8,
+          'circle-color': [
+            'match',
+            ['get', 'カテゴリ'],
+            ...matchPairs,
+            categoryColors['その他'],
+          ],
+          'circle-opacity': 0.95,
+          'circle-stroke-width': 1.5,
           'circle-stroke-color': '#FFFFFF',
           'circle-stroke-opacity': 1,
         },
       });
+      // ラベル（ズームによるサイズ変化で可読性を確保）
       map.addLayer({
         id: 'shop-symbol',
         type: 'symbol',
         source: 'shops',
         filter: ['all', ['==', '$type', 'Point']],
         paint: {
-          'text-color': '#000000',
+          'text-color': '#222222',
           'text-halo-color': '#FFFFFF',
           'text-halo-width': 2,
         },
         layout: {
-          'text-field': "{スポット名}",
+          'text-field': '{スポット名}',
           'text-font': ['Noto Sans Regular'],
           'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-          'text-radial-offset': 0.5,
+          'text-radial-offset': 0.6,
           'text-justify': 'auto',
-          'text-size': 12,
+          'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            10, 10,
+            12, 12,
+            14, 14
+          ],
           'text-anchor': 'top',
-          'text-max-width': 12,
+          'text-max-width': 14,
           'text-allow-overlap': false,
         },
       });
-      const layers = ['shop-points', 'shop-symbol'];
+      const layers = ['shop-points-outer', 'shop-points-inner', 'shop-symbol'];
       layers.forEach(layer => {
         map.on('mouseenter', layer, () => {
           map.getCanvas().style.cursor = 'pointer';

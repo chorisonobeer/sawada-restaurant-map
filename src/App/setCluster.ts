@@ -5,9 +5,17 @@ const setCluster = (map: any) => {
     source: 'shops',
     filter: ['has', 'point_count'],
     paint: {
-      'circle-radius': 20,
-      'circle-color': '#FF0000',
-      'circle-opacity': 1.0,
+      'circle-radius': [
+        'step', ['get', 'point_count'],
+        16, 10, 20, 50, 26, 100, 32
+      ],
+      'circle-color': [
+        'step', ['get', 'point_count'],
+        '#3CB371', 10, '#FFD54F', 50, '#FF8A65', 100, '#E53935'
+      ],
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#FFFFFF',
+      'circle-opacity': 0.9,
     },
   })
 
@@ -17,10 +25,12 @@ const setCluster = (map: any) => {
     source: 'shops',
     filter: ['has', 'point_count'],
     paint: {
-      'text-color': '#FFFFFF',
+      'text-color': '#222222',
+      'text-halo-color': '#FFFFFF',
+      'text-halo-width': 2,
     },
     layout: {
-      'text-field': '{point_count_abbreviated} 件',
+      'text-field': '{point_count_abbreviated}',
       'text-size': 12,
       'text-font': ['Noto Sans Regular'],
     },
