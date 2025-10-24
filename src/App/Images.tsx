@@ -41,6 +41,9 @@ const Content = (props: Props) => {
               src={item['画像']}
               alt={item['スポット名']}
               loading="lazy"
+              decoding="async"
+              width={400}
+              height={300}
               onClick={() => popupHandler(item)}
               onError={e => {
                 //@ts-ignore

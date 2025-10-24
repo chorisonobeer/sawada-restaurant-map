@@ -108,16 +108,37 @@ const Shop: React.FC<Props> = (props) => {
       .map(key => props.shop[key])
       .filter(img => img && img.trim() !== '')
       .map(img => {
-        // 既にURLの場合はそのまま使用、ファイル名のみの場合はpublicフォルダからのパスとして扱う
         if (img.startsWith('http')) {
           return img;
         } else {
-          return `/${img}`; // publicフォルダからの相対パス
+          return `/${img}`;
         }
       });
   };
 
   const images = getImages();
+  // 詳細画像のロード状態管理（スケルトン表示制御）
+  const [loaded, setLoaded] = useState<boolean[]>([]);
+  useEffect(() => {
+    setLoaded(images.map(() => false));
+  }, [images]);
+
+  const handleImageLoad = (idx: number) => {
+    setLoaded(prev => {
+      const next = [...prev];
+      next[idx] = true;
+      return next;
+    });
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, idx: number) => {
+    (e.currentTarget as HTMLImageElement).style.display = 'none';
+    setLoaded(prev => {
+      const next = [...prev];
+      next[idx] = true;
+      return next;
+    });
+  };
 
   return (
     <div
@@ -173,8 +194,22 @@ const Shop: React.FC<Props> = (props) => {
         {images.length > 0 && (
           <div className="shop-images-grid">
             {images.map((imgUrl, index) => (
-              <div key={`image-${index}`} className="shop-image-item">
-                <img src={imgUrl} alt={`${spotName} 画像${index + 1}`} className="shop-image" />
+              <div
+                key={`image-${index}`}
+                className={`shop-image-item ${loaded[index] ? 'loaded' : 'loading'}`}
+              >
+                <div className="skeleton" />
+                <img
+                  src={imgUrl}
+                  alt={`${props.shop['スポット名']}の写真${index+1}`}
+                  className="shop-image"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  width={400}
+                  height={300}
+                  onLoad={() => handleImageLoad(index)}
+                  onError={(e) => handleImageError(e, index)}
+                />
               </div>
             ))}
           </div>

@@ -92,7 +92,15 @@ const App: React.FC = React.memo(() => {
                     if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
                     const imageRaw = (feature['画像'] || '').toString().trim();
                     const imageUrl = transformImageUrl(imageRaw) || imageRaw;
-                    const shop = { index: i, ...feature, 画像: imageUrl, 緯度: String(lat), 経度: String(lng) };
+                    const image2Raw = (feature['画像2'] || '').toString().trim();
+                    const image3Raw = (feature['画像3'] || '').toString().trim();
+                    const image4Raw = (feature['画像4'] || '').toString().trim();
+                    const image5Raw = (feature['画像5'] || '').toString().trim();
+                    const image2Url = transformImageUrl(image2Raw) || image2Raw;
+                    const image3Url = transformImageUrl(image3Raw) || image3Raw;
+                    const image4Url = transformImageUrl(image4Raw) || image4Raw;
+                    const image5Url = transformImageUrl(image5Raw) || image5Raw;
+                    const shop = { index: i, ...feature, 画像: imageUrl, 画像2: image2Url, 画像3: image3Url, 画像4: image4Url, 画像5: image5Url, 緯度: String(lat), 経度: String(lng) };
                     nextShopList.push(shop);
                   }
                   sortShopList(nextShopList).then(async (sortedShopList) => {
@@ -133,7 +141,15 @@ const App: React.FC = React.memo(() => {
                     if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
                     const imageRaw = (feature['画像'] || '').toString().trim();
                     const imageUrl = transformImageUrl(imageRaw) || imageRaw;
-                    const shop = { index: i, ...feature, 画像: imageUrl, 緯度: String(lat), 経度: String(lng) };
+                    const image2Raw = (feature['画像2'] || '').toString().trim();
+                    const image3Raw = (feature['画像3'] || '').toString().trim();
+                    const image4Raw = (feature['画像4'] || '').toString().trim();
+                    const image5Raw = (feature['画像5'] || '').toString().trim();
+                    const image2Url = transformImageUrl(image2Raw) || image2Raw;
+                    const image3Url = transformImageUrl(image3Raw) || image3Raw;
+                    const image4Url = transformImageUrl(image4Raw) || image4Raw;
+                    const image5Url = transformImageUrl(image5Raw) || image5Raw;
+                    const shop = { index: i, ...feature, 画像: imageUrl, 画像2: image2Url, 画像3: image3Url, 画像4: image4Url, 画像5: image5Url, 緯度: String(lat), 経度: String(lng) };
                     nextShopList.push(shop);
                   }
                   sortShopList(nextShopList).then(async (sortedShopList) => {

@@ -236,6 +236,7 @@ Last Modified: 2025-02-28 16:50:00
     width: 100%;
     border-radius: 8px;
     overflow: hidden;
+    position: relative;
   }
   
   .shop-image {
@@ -244,6 +245,24 @@ Last Modified: 2025-02-28 16:50:00
     aspect-ratio: 4/3;
     object-fit: cover;
     display: block;
+  }
+  
+  /* 画像ロード中のスケルトン */
+  .shop-image-item .skeleton {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+  
+  .shop-image-item.loaded .skeleton {
+    display: none;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
   
   /* 画像が1枚だけの場合は幅いっぱいに表示 */

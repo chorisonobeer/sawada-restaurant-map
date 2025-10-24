@@ -11,7 +11,9 @@ const Content = () => {
   return (
     <div className="about">
       <div className="branding">
-        <img className="image" src={logoUrl} alt=""/>
+        <img className="image" src={logoUrl} alt="" decoding="async" onError={(e) => {
+          (e.currentTarget as HTMLImageElement).src = `${process.env.PUBLIC_URL}/logo.svg`;
+        }} />
       </div>
 
       <div className="description">{config.description}</div>

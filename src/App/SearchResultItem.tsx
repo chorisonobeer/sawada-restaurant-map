@@ -24,6 +24,13 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ shop, onClick }) =>
             src={image} 
             alt={shop['スポット名'] || '画像'} 
             className="item-image" 
+            loading="lazy"
+            decoding="async"
+            width={70}
+            height={70}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
           />
         </div>
       )}

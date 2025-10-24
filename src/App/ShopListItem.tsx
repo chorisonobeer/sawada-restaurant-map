@@ -71,7 +71,7 @@ const Content = (props: Props) => {
       </div>
 
       <div className="image-box" style={{ margin: "10px 10px 10px 0" }}>
-        { image && <img src={image} alt={props.data['スポット名']} onClick={clickHandler}/> }
+        { image && <img src={image} alt={props.data['スポット名']} loading="lazy" decoding="async" width={320} height={240} onClick={clickHandler}/> }
       </div>
       <div className="right" onClick={clickHandler}>
         <BsChevronCompactRight size="40px" color="#CCCCCC" />

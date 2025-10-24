@@ -334,8 +334,15 @@ const Events: React.FC = () => {
                     key={n}
                     src={url}
                     alt={`イベント画像${n}`}
+                    loading="lazy"
+                    decoding="async"
+                    width={400}
+                    height={300}
                     onClick={() => setImageModalUrl(url)}
                     style={{ cursor: 'pointer' }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    }}
                   />
                 ) : null;
               })}

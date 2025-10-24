@@ -96,6 +96,8 @@ const Content = () => {
                 <img 
                   src={sponsor.imageUrl} 
                   alt={sponsor.name}
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     // 画像読み込みエラー時の代替表示
                     (e.target as HTMLImageElement).src = '/sponsors/placeholder.png';
