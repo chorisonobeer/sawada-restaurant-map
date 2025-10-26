@@ -2,5 +2,21 @@
 .mapboxgl-ctrl-top-right {
     top: auto !important;
     bottom: 10px !important;
-  }
+}
+
+/* MapLibre のコントロール位置調整 */
+.maplibregl-ctrl-top-right {
+  top: auto !important;
+  bottom: 10px !important;
+}
+
+/* 検索結果表示中はズームボタンを非表示 */
+.search-open .mapboxgl-ctrl-zoom {
+  display: none !important;
+}
+.search-open .maplibregl-ctrl-zoom,
+.search-open .maplibregl-ctrl-zoom-in,
+.search-open .maplibregl-ctrl-zoom-out {
+  display: none !important;
+}
   

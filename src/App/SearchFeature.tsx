@@ -36,6 +36,14 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
 
+  // 検索結果表示中は地図のズームボタン等を隠すためのクラスをボディに付与
+  useEffect(() => {
+    document.body.classList.toggle('search-open', showResults);
+    return () => {
+      document.body.classList.remove('search-open');
+    };
+  }, [showResults]);
+
   // クリック外のイベントを監視して、ドロップダウンを閉じる
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -342,7 +350,7 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
   };
 
   return (
-    <div className="search-feature">
+    <div className={`search-feature ${showResults ? 'results-open' : ''}`}>
       <div className="search-input-container">
         <input
           type="text"
