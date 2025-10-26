@@ -3,6 +3,19 @@ import './ShopListItem.scss';
 import { Link } from "react-router-dom";
 import { makeDistanceLabelText } from "./distance-label";
 
+// 営業時間から曜日表記を取り除き、時間のみを返す
+const removeWeekdaysFromHours = (hours: string): string => {
+  if (!hours) return hours;
+  return hours
+    .replace(/[月火水木金土日]\s*-\s*[月火水木金土日]\s*/g, '')
+    .replace(/[月火水木金土日]\s*,\s*/g, '')
+    .replace(/[月火水木金土日]\s+/g, '')
+    .replace(/^\s*,\s*/, '')
+    .replace(/\s*,\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 type Props = {
   data: Pwamap.ShopData;
   popupHandler: Function;
@@ -27,7 +40,9 @@ const Content = (props: Props) => {
   const isCategoryPage = props.queryCategory ? true : false;
 
   // 表示項目
-  const hours = props.data['営業時間'] || '営業時間不明';
+  const hoursRaw = props.data['営業時間'] || '営業時間不明';
+  const hours = removeWeekdaysFromHours(hoursRaw);
+  const hourRanges = hours.split(/\s*,\s*/).filter(Boolean);
   const closed = props.data['定休日'] || '定休日不明';
   const intro = props.data['紹介文'] || '';
 
@@ -58,7 +73,16 @@ const Content = (props: Props) => {
       <div className="info-box" onClick={clickHandler}>
         <div className="info-row">
           <span className="info-label">営業時間</span>
-          <span className="info-value">{hours}</span>
+          <span className="info-value">
+            {hourRanges.length > 0 
+              ? hourRanges.map((range, idx) => (
+                  <span key={`hr-${idx}`}>
+                    {range}
+                    {idx < hourRanges.length - 1 && <br />}
+                  </span>
+                ))
+              : hours}
+          </span>
         </div>
         <div className="info-row">
           <span className="info-label">定休日</span>

@@ -15,10 +15,12 @@ type Props = {
 const SWIPE_THRESHOLD = 80;
 
 const Shop: React.FC<Props> = (props) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [localDistance, setLocalDistance] = useState<number | undefined>(props.shop.distance);
   const [isClosing, setIsClosing] = useState(false);
-  const { location: currentPosition } = useContext(GeolocationContext);
+  const [loaded, setLoaded] = useState<boolean[]>([]);
+  const [localDistance, setLocalDistance] = useState<number | undefined>(undefined);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { location } = useContext(GeolocationContext);
 
   // アニメーション用: マウント時に .slide-in クラスを付与して右側からスライドイン
   useEffect(() => {
@@ -31,8 +33,8 @@ const Shop: React.FC<Props> = (props) => {
 
   // もしprops.shop.distanceが未定義なら、現在位置からの距離を計算
   useEffect(() => {
-    if (localDistance === undefined && currentPosition) {
-      const from = turf.point(currentPosition);
+    if (localDistance === undefined && location) {
+      const from = turf.point(location);
       const lng = parseFloat(props.shop["経度"]);
       const lat = parseFloat(props.shop["緯度"]);
       if (!Number.isNaN(lng) && !Number.isNaN(lat)) {
@@ -43,7 +45,7 @@ const Shop: React.FC<Props> = (props) => {
         setLocalDistance(Infinity);
       }
     }
-  }, [localDistance, currentPosition, props.shop]);
+  }, [localDistance, location, props.shop]);
 
   // タッチイベント用の座標管理
   const touchStartX = useRef<number | null>(null);
@@ -89,16 +91,43 @@ const Shop: React.FC<Props> = (props) => {
   const content = props.shop["紹介文"] || "";
   const spotName = props.shop["スポット名"] || "店名不明";
 
-  const hours = props.shop["営業時間"] || "営業時間不明";
+  // 営業時間から曜日を削除する関数
+  const removeWeekdaysFromHours = (hours: string): string => {
+    if (!hours) return hours;
+    
+    // 曜日パターンを削除（月-土、日,月,火など）
+    return hours
+      .replace(/[月火水木金土日]\s*-\s*[月火水木金土日]\s*/g, '') // 月-土 形式
+      .replace(/[月火水木金土日]\s*,\s*/g, '') // 月, 火, 形式
+      .replace(/[月火水木金土日]\s+/g, '') // 単独の曜日
+      .replace(/^\s*,\s*/, '') // 先頭のカンマを削除
+      .replace(/\s*,\s*$/, '') // 末尾のカンマを削除
+      .replace(/\s+/g, ' ') // 複数のスペースを1つに
+      .trim();
+  };
+
+  const hours = removeWeekdaysFromHours(props.shop["営業時間"] || "営業時間不明");
   const closed = props.shop["定休日"] || "定休日不明";
   const address = props.shop["住所"] || "住所不明";
   const tel = props.shop["TEL"];
   const site = props.shop["公式サイト"];
+  const parking = props.shop["駐車場"];
+  const foundedDate = props.shop["創業年月"];
+  const payment = props.shop["支払い方法"];
 
   // Google Mapsのルート検索URLを生成
   const getGoogleMapsDirectionsUrl = () => {
     const destination = encodeURIComponent(address);
     return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  };
+
+  // 画像拡大表示のハンドラー
+  const handleImageClick = (imageUrl: string) => {
+    setExpandedImage(imageUrl);
+  };
+
+  const closeExpandedImage = () => {
+    setExpandedImage(null);
   };
 
   // 画像データの処理
@@ -110,12 +139,6 @@ const Shop: React.FC<Props> = (props) => {
       .filter(img => img !== '')
       .map(img => (img.startsWith('http') || img.startsWith('/')) ? img : `/${img}`);
   }, [props.shop]);
-  
-  // 詳細画像のロード状態管理（スケルトン表示制御）
-  const [loaded, setLoaded] = useState<boolean[]>([]);
-  useEffect(() => {
-    setLoaded(Array(images.length).fill(false));
-  }, [images]);
 
     const handleImageLoad = (idx: number) => {
       setLoaded(prev => {
@@ -147,7 +170,7 @@ const Shop: React.FC<Props> = (props) => {
           </button>
         </div>
         <div className="container">
-          <h2 className="shop-title">{spotName}</h2>
+          <h2 className="shop-title-large">{spotName}</h2>
 
           <div className="tag-box">
             {categories.map((category, index) => (
@@ -180,7 +203,28 @@ const Shop: React.FC<Props> = (props) => {
             <div className="info-item">
               <span className="info-label">定休日:</span> {closed}
             </div>
-            <div className="info-item">
+            {payment && (
+              <div className="info-item">
+                <span className="info-label">支払い方法:</span> {payment}
+              </div>
+            )}
+            {parking && (
+              <div className="info-item">
+                <span className="info-label">駐車場:</span> {parking}
+              </div>
+            )}
+            {tel && (
+              <div className="info-item">
+                <span className="info-label">電話番号:</span> 
+                <a href={`tel:${tel}`} className="phone-link">{tel}</a>
+              </div>
+            )}
+            {foundedDate && (
+              <div className="info-item">
+                <span className="info-label">創業年月:</span> {foundedDate}
+              </div>
+            )}
+                        <div className="info-item">
               <span className="info-label">住所:</span> {address}
             </div>
           </div>
@@ -198,9 +242,8 @@ const Shop: React.FC<Props> = (props) => {
                     alt={`${props.shop['スポット名']}の写真${index+1}`}
                     className="shop-image"
                     loading={index === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    width={400}
-                    height={300}
+                    onClick={() => handleImageClick(imgUrl)}
+                    style={{ cursor: 'pointer' }}
                     onLoad={() => handleImageLoad(index)}
                     onError={(e) => handleImageError(e, index)}
                   />
@@ -210,8 +253,23 @@ const Shop: React.FC<Props> = (props) => {
           )}
 
           {content && (
-            <p style={{ margin: "24px 0", wordBreak: "break-all" }}>{content}</p>
+            <div className="shop-content">
+              <p>{content}</p>
+            </div>
           )}
+        </div>
+
+        {/* 画像拡大表示モーダル */}
+        {expandedImage && (
+          <div className="image-modal" onClick={closeExpandedImage}>
+            <div className="image-modal-content">
+              <img src={expandedImage} alt="拡大画像" />
+              <button className="close-modal" onClick={closeExpandedImage}>
+                <AiOutlineClose size="24px" color="#FFFFFF" />
+              </button>
+            </div>
+          </div>
+        )}
 
           <div className="action-buttons">
             {tel && (
@@ -231,7 +289,6 @@ const Shop: React.FC<Props> = (props) => {
             )}
           </div>
         </div>
-      </div>
     );
 };
 

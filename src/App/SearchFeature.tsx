@@ -2,6 +2,19 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './SearchFeature.scss';
 import zen2han from '../lib/zen2han';
 
+// 営業時間から曜日表記を取り除き、時間のみを返す
+const removeWeekdaysFromHours = (hours: string): string => {
+  if (!hours) return hours;
+  return hours
+    .replace(/[月火水木金土日]\s*-\s*[月火水木金土日]\s*/g, '')
+    .replace(/[月火水木金土日]\s*,\s*/g, '')
+    .replace(/[月火水木金土日]\s+/g, '')
+    .replace(/^\s*,\s*/, '')
+    .replace(/\s*,\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 type SearchFeatureProps = {
   data: Pwamap.ShopData[];
   onSearchResults: (results: Pwamap.ShopData[]) => void;
@@ -442,16 +455,28 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
                   onClick={() => handleResultClick(shop)}
                 >
                   <div className="result-info">
-                    <div className="result-name" style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
+                    <div className="result-name">
                       {shop['スポット名']}
                     </div>
-                    <div className="result-hours" style={{ fontSize: '8pt', fontWeight: '600' }}>
-                      営業時間： {shop['営業時間'] ? shop['営業時間'] : '営業時間不明'}
+                    <div className="result-line result-hours">
+                      営業時間： {(() => {
+                        const hoursRaw = shop['営業時間'] ? String(shop['営業時間']) : '営業時間不明';
+                        const hours = removeWeekdaysFromHours(hoursRaw);
+                        const hourRanges = hours.split(/\s*,\s*/).filter(Boolean);
+                        return hourRanges.length > 0
+                          ? hourRanges.map((range, idx) => (
+                              <span key={`hr-${idx}`}>
+                                {range}
+                                {idx < hourRanges.length - 1 && <br />}
+                              </span>
+                            ))
+                          : hours;
+                      })()}
                     </div>
-                    <div className="result-closed" style={{ fontSize: '8pt', fontWeight: '600' }}>
+                    <div className="result-line result-closed">
                       定休日：{shop['定休日'] ? shop['定休日'] : '定休日不明'}
                     </div>
-                    <div className="result-address" style={{ fontSize: '8pt', fontWeight: '600' }}>
+                    <div className="result-line result-address">
                       住所： {shop['住所'] ? shop['住所'] : '住所不明'}
                     </div>
                   </div>

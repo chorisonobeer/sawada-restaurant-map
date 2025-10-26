@@ -233,32 +233,29 @@
         .result-info {
           flex: 1;
           margin-right: 12px;
-          
-          h3 {
-            font-size: 14px;
-            margin: 0 0 4px 0;
-            color: #333;
-            font-weight: 500;
-          }
-          
-          p {
+          // 既存のh3, pはそのまま
+          // 詳細行の統一スタイル
+          .result-line {
             font-size: 12px;
-            color: #666;
-            margin: 0;
-            line-height: 1.4;
+            font-weight: 600;
+            color: #555;
+            line-height: 1.6;
+            margin: 2px 0;
+            font-family: inherit;
           }
-        }
-        
-        .result-image {
-          width: 80px;
-          height: 80px;
-          overflow: hidden;
-          border-radius: 4px;
-          
-          img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+
+          .result-hours span {
+            font-size: inherit;
+            font-weight: inherit;
+            font-family: inherit;
+          }
+
+          .result-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+            font-family: inherit;
           }
         }
       }
