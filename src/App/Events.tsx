@@ -215,17 +215,44 @@ const Events: React.FC = () => {
   if (loading) return <LoadingSpinner variant="circular" size="md" text="イベント情報を読み込み中..." />;
   if (error) return <div className="events-error">{error}</div>;
 
-  // 画像URL正規化（他画面と同様のルール + Google Drive対応）
-  const normalizeImageUrl = (raw: string): string => {
-    const s = (raw || '').trim();
-    if (!s) return '';
-    const m1 = s.match(/https?:\/\/drive\.google\.com\/file\/d\/([^/]+)\/view/i);
-    if (m1) return `https://drive.google.com/uc?export=view&id=${m1[1]}`;
-    const m2 = s.match(/https?:\/\/drive\.google\.com\/open\?id=([^&]+)/i);
-    if (m2) return `https://drive.google.com/uc?export=view&id=${m2[1]}`;
-    const m3 = s.match(/https?:\/\/drive\.google\.com\/uc\?id=([^&]+)/i);
-    if (m3) return `https://drive.google.com/uc?export=view&id=${m3[1]}`;
-    return (s.startsWith('http') || s.startsWith('/')) ? s : `/${s}`;
+  // Google Drive画像をプロキシ経由で配信するためのURL変換
+  const transformImageUrl = (url?: string): string | undefined => {
+    if (!url) return undefined;
+    const s = url.trim();
+    if (!s) return undefined;
+  
+    // 既に相対パスやdata URIならそのまま
+    if (s.startsWith('/') || s.startsWith('data:')) return s;
+  
+    // Google Driveの各種URLからID抽出
+    const patterns = [
+      /https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/uc\?(?:export=(?:view|download)&)?id=([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+    ];
+    let id: string | null = null;
+    for (const re of patterns) {
+      const m = s.match(re);
+      if (m && m[1]) { id = m[1]; break; }
+    }
+  
+    // IDが取れた場合はプロキシを経由
+    const isLocal = typeof window !== 'undefined' && (/^localhost$|^127\.0\.0\.1$/.test(window.location.hostname) || window.location.hostname === '::1');
+    if (id) {
+      const proxyBase = isLocal
+        ? (config.image_proxy_url_dev || config.image_proxy_url)
+        : (config.image_proxy_url || '/.netlify/functions/image-proxy');
+      if (proxyBase) {
+        return `${proxyBase}?id=${encodeURIComponent(id)}`;
+      }
+      // フォールバック（主にローカル確認用）
+      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w640`;
+    }
+  
+    // Drive以外はhttp(s)ならそのまま、そうでなければルート相対に
+    if (s.startsWith('http')) return s;
+    return `/${s}`;
   };
 
   return (
@@ -237,7 +264,7 @@ const Events: React.FC = () => {
           const imageUrl = event["画像URL1"] as string | undefined;
           const breweries = event["参加ブルワリー"] as string | undefined;
           const isBreweriesExpanded = expandedBreweries[event.index] || false;
-          const normalizedImageUrl = imageUrl ? normalizeImageUrl(imageUrl) : undefined;
+          const normalizedImageUrl = imageUrl ? (transformImageUrl(imageUrl) || imageUrl) : undefined;
           
           return (
             <div key={event.index} className="event-card" onClick={() => showEventDetail(event)}>
@@ -343,7 +370,7 @@ const Events: React.FC = () => {
             <div className="event-detail-images">
               {[1,2,3,4,5,6].map(n => {
                 const url = selectedEvent[`画像URL${n}` as keyof EventData] as string | undefined;
-                const src = url ? normalizeImageUrl(url) : undefined;
+                const src = url ? (transformImageUrl(url) || url) : undefined;
                 return src ? (
                   <img
                     key={n}
