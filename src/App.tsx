@@ -38,19 +38,38 @@ const App: React.FC = React.memo(() => {
   const transformImageUrl = useCallback((url?: string): string | undefined => {
     if (!url) return url;
 
+    // すでに許可された形式（相対パスやHTTP(S)以外）ならそのまま返す
+    if (url.startsWith('/') || url.startsWith('data:')) return url;
+
+    // Google Driveの各種URLからIDを抽出
     const patterns = [
       /https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
       /https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
-      /https?:\/\/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/uc\?(?:export=(?:view|download)&)?id=([a-zA-Z0-9_-]+)/,
+      /https?:\/\/drive\.google\.com\/thumbnail\?id=([a-zA-Z0-9_-]+)/
     ];
     let id: string | null = null;
     for (const re of patterns) {
       const m = url.match(re);
       if (m && m[1]) { id = m[1]; break; }
     }
+
+    // IDが取れない場合はそのまま返す（外部ホストやローカル画像など）
     if (!id) return url;
-    // 常に直リンクを返す（本番の画像表示を優先し、ローカルプロキシは使用しない）
-    return `https://drive.google.com/uc?id=${encodeURIComponent(id)}`;
+
+    // 実行環境に応じてプロキシベースURLを決定
+    const isLocal = typeof window !== 'undefined' && (/^localhost$|^127\.0\.0\.1$/.test(window.location.hostname) || window.location.hostname === '::1');
+    const proxyBase = isLocal
+      ? (config.image_proxy_url_dev || config.image_proxy_url)
+      : (config.image_proxy_url || '/.netlify/functions/image-proxy');
+
+    // プロキシURLを返す（本番はNetlify Functionsを前提）
+    if (proxyBase) {
+      return `${proxyBase}?id=${encodeURIComponent(id)}`;
+    }
+
+    // フォールバック：サムネイルAPI（主にローカルでの確認用）
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w640`;
   }, []);
 
   const sortShopList = useCallback((shopList: Pwamap.ShopData[]) => {
