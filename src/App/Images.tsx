@@ -25,37 +25,40 @@ const Content = (props: Props) => {
 
   useEffect(() => {
 
-    let imageListItems = []
+    const imageKeys = ['画像', '画像2', '画像3', '画像4', '画像5'];
+    const items: JSX.Element[] = [];
 
     for (let i = 0; i < data.length; i++) {
-      const item = data[i];
+      const shop = data[i];
 
-      if (item['画像']) {
+      imageKeys.forEach((key, idx) => {
+        const raw = (shop[key] || '').toString().trim();
+        if (!raw) return;
+        const src = (raw.startsWith('http') || raw.startsWith('/')) ? raw : `/${raw}`;
 
-        imageListItems.push(
+        items.push(
           <ImageListItem
-            key={i}
+            key={`${i}-${key}`}
             className="mui-image-list-item"
           >
             <img
-              src={item['画像']}
-              alt={item['スポット名']}
+              src={src}
+              alt={`${shop['スポット名'] || ''}の写真${idx + 1}`}
               loading="lazy"
               decoding="async"
               width={400}
               height={300}
-              onClick={() => popupHandler(item)}
-              onError={e => {
-                //@ts-ignore
-                e.target.parentNode.remove()
+              onClick={() => popupHandler(shop)}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).parentElement?.remove();
               }}
             />
           </ImageListItem>
-        )
-      }
+        );
+      });
     }
 
-    setValidImageList(imageListItems)
+    setValidImageList(items);
 
   }, [data])
 
