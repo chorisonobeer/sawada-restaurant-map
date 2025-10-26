@@ -10,6 +10,7 @@ import config from "../config.json";
 import LoadingSpinner from "./LoadingSpinner";
 import "./Events.scss";
 import { getJSON, setJSON } from "../utils/idbStore";
+import ZoomableImage from "./ZoomableImage";
 
 type EventData = Pwamap.EventData & {
   "参加ブルワリー"?: string;
@@ -392,7 +393,10 @@ const Events: React.FC = () => {
             {imageModalUrl && (
               <div className="image-modal" onClick={() => setImageModalUrl(null)}>
                 <div className="image-modal-content" onClick={e => e.stopPropagation()}>
-                  <img src={imageModalUrl} alt="拡大画像" />
+                -                  <img src={imageModalUrl} alt="拡大画像" />
+                +                  <div style={{ width: '90vw', height: '70vh' }}>
+                +                    <ZoomableImage src={imageModalUrl} alt="拡大画像" />
+                +                  </div>
                 </div>
               </div>
             )}

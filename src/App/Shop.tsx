@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { makeDistanceLabelText } from "./distance-label";
 import { GeolocationContext } from "../context/GeolocationContext";
 import * as turf from "@turf/turf";
+import ZoomableImage from "./ZoomableImage";
 
 type Props = {
   shop: Pwamap.ShopData;
@@ -262,11 +263,14 @@ const Shop: React.FC<Props> = (props) => {
         {/* 画像拡大表示モーダル */}
         {expandedImage && (
           <div className="image-modal" onClick={closeExpandedImage}>
-            <div className="image-modal-content">
-              <img src={expandedImage} alt="拡大画像" />
-              <button className="close-modal" onClick={closeExpandedImage}>
-                <AiOutlineClose size="24px" color="#FFFFFF" />
-              </button>
+            <div className="image-modal-content" onClick={e => e.stopPropagation()}>
+-              <img src={expandedImage} alt="拡大画像" />
++              <div style={{ width: '90vw', height: '70vh' }}>
++                <ZoomableImage src={expandedImage} alt="拡大画像" />
++              </div>
+               <button className="close-modal" onClick={closeExpandedImage}>
+                 <AiOutlineClose size="24px" color="#FFFFFF" />
+               </button>
             </div>
           </div>
         )}
