@@ -215,21 +215,35 @@ const Events: React.FC = () => {
   if (loading) return <LoadingSpinner variant="circular" size="md" text="イベント情報を読み込み中..." />;
   if (error) return <div className="events-error">{error}</div>;
 
+  // 画像URL正規化（他画面と同様のルール + Google Drive対応）
+  const normalizeImageUrl = (raw: string): string => {
+    const s = (raw || '').trim();
+    if (!s) return '';
+    const m1 = s.match(/https?:\/\/drive\.google\.com\/file\/d\/([^/]+)\/view/i);
+    if (m1) return `https://drive.google.com/uc?export=view&id=${m1[1]}`;
+    const m2 = s.match(/https?:\/\/drive\.google\.com\/open\?id=([^&]+)/i);
+    if (m2) return `https://drive.google.com/uc?export=view&id=${m2[1]}`;
+    const m3 = s.match(/https?:\/\/drive\.google\.com\/uc\?id=([^&]+)/i);
+    if (m3) return `https://drive.google.com/uc?export=view&id=${m3[1]}`;
+    return (s.startsWith('http') || s.startsWith('/')) ? s : `/${s}`;
+  };
+
   return (
     <div className="events-page">
       <h1 className="events-title">イベント一覧</h1>
       <div className="events-list">
         {eventList.length === 0 && <div>イベント情報がありません</div>}
-        {eventList.map((event) => {
+         {eventList.map((event) => {
           const imageUrl = event["画像URL1"] as string | undefined;
           const breweries = event["参加ブルワリー"] as string | undefined;
           const isBreweriesExpanded = expandedBreweries[event.index] || false;
+          const normalizedImageUrl = imageUrl ? normalizeImageUrl(imageUrl) : undefined;
           
           return (
             <div key={event.index} className="event-card" onClick={() => showEventDetail(event)}>
-              {imageUrl && (
+              {normalizedImageUrl && (
                 <div className="event-card-image-wrapper">
-                  <img src={imageUrl} alt={event["イベント名"]} className="event-card-image" />
+                  <img src={normalizedImageUrl} alt={event["イベント名"]} className="event-card-image" />
                 </div>
               )}
               <div className="event-card-content">
@@ -329,16 +343,17 @@ const Events: React.FC = () => {
             <div className="event-detail-images">
               {[1,2,3,4,5,6].map(n => {
                 const url = selectedEvent[`画像URL${n}` as keyof EventData] as string | undefined;
-                return url ? (
+                const src = url ? normalizeImageUrl(url) : undefined;
+                return src ? (
                   <img
                     key={n}
-                    src={url}
+                    src={src}
                     alt={`イベント画像${n}`}
                     loading="lazy"
                     decoding="async"
                     width={400}
                     height={300}
-                    onClick={() => setImageModalUrl(url)}
+                    onClick={() => setImageModalUrl(src)}
                     style={{ cursor: 'pointer' }}
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
