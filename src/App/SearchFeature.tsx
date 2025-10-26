@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './SearchFeature.scss';
+import zen2han from '../lib/zen2han';
 
 type SearchFeatureProps = {
   data: Pwamap.ShopData[];
@@ -97,7 +98,7 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     }
   }, [data]);
 
-  // 営業時間の判定
+  // 営業時間の判定（曜日セグメント・複数時間帯・正規化対応）
   const isShopOpen = (shop: Pwamap.ShopData): boolean => {
     if (!shop['営業時間']) return false;
 
@@ -107,38 +108,97 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     const currentHour = jstNow.getHours();
     const currentMinute = jstNow.getMinutes();
     const currentTimeMinutes = currentHour * 60 + currentMinute;
-    const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][jstNow.getDay()];
 
-    // 定休日チェック
-    if (shop['定休日']) {
-      const closedDays = shop['定休日']
-        .split(/,|、|\s+/)
-        .map(day => day.trim())
-        .filter(day => day !== '');
-      if (closedDays.some(day => day.includes(dayOfWeek))) {
-        return false;
+    const dayLetters = ['日', '月', '火', '水', '木', '金', '土'];
+    const todayIndex = jstNow.getDay();
+    const prevDayIndex = (todayIndex + 6) % 7;
+
+    // 文字列正規化（全角→半角、区切り統一）
+    const raw = shop['営業時間'].toString();
+    const normalized = zen2han(raw).trim()
+      .replace(/[〜～]/g, '-')
+      .replace(/[、，]/g, ',');
+
+    // 先頭に曜日セグメントがあれば抽出（例: "月-土 18:00-22:00" や "火,水-日 19:00-00:00"）
+    const weekdayMatch = normalized.match(/^\s*((?:毎日|[日月火水木金土](?:\s*(?:-|,)\s*[日月火水木金土])*(?:\s*,\s*[日月火水木金土](?:\s*(?:-|,)\s*[日月火水木金土])*)*))\s+(.+)$/);
+
+    // 曜日セグメントのパース
+    const allDaysSet = new Set([0,1,2,3,4,5,6]);
+    const parseWeekdaySpec = (spec: string): Set<number> => {
+      const s = spec.replace(/\s+/g, '').replace(/[、，]/g, ',');
+      if (s === '毎日') return new Set(allDaysSet);
+      const result = new Set<number>();
+      const tokens = s.split(',').filter(t => t.length > 0);
+      for (const token of tokens) {
+        if (token.includes('-')) {
+          const [startChar, endChar] = token.split('-');
+          const si = dayLetters.indexOf(startChar);
+          const ei = dayLetters.indexOf(endChar);
+          if (si !== -1 && ei !== -1) {
+            if (si <= ei) {
+              for (let i = si; i <= ei; i++) result.add(i);
+            } else {
+              for (let i = si; i <= 6; i++) result.add(i);
+              for (let i = 0; i <= ei; i++) result.add(i);
+            }
+          }
+        } else {
+          // 連結表記（例: 水木）対応のため1文字ずつ評価
+          for (const ch of token.split('')) {
+            const idx = dayLetters.indexOf(ch);
+            if (idx !== -1) result.add(idx);
+          }
+        }
       }
+      return result.size > 0 ? result : new Set(allDaysSet);
+    };
+
+    const allowedDays: Set<number> | undefined = weekdayMatch ? parseWeekdaySpec(weekdayMatch[1]) : undefined;
+    const timesStr = weekdayMatch ? weekdayMatch[2] : normalized; // 曜日セグメントがなければ全文を時間抽出対象に
+
+    // 時間帯抽出（複数レンジ対応）
+    const timeRanges: Array<{ start: number; end: number }> = [];
+    const regex = /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/g;
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(timesStr)) !== null) {
+      const [, sh, sm, eh, em] = m;
+      const startHour = parseInt(sh, 10);
+      const startMinute = parseInt(sm, 10);
+      const endHour = parseInt(eh, 10);
+      const endMinute = parseInt(em, 10);
+      let startTotal = startHour * 60 + startMinute;
+      let endTotal = endHour * 60 + endMinute;
+      // 24:00を00:00扱い
+      if (endHour === 24 && endMinute === 0) {
+        endTotal = 0;
+      }
+      timeRanges.push({ start: startTotal, end: endTotal });
     }
 
-    // 営業時間チェック
-    const timeRangeMatch = shop['営業時間'].match(/(\d{1,2}):(\d{2})\s*[-～]\s*(\d{1,2}):(\d{2})/);
-    if (!timeRangeMatch) return false;
+    if (timeRanges.length === 0) return false;
 
-    const [, startHourStr, startMinuteStr, endHourStr, endMinuteStr] = timeRangeMatch;
-    const startHour = parseInt(startHourStr, 10);
-    const startMinute = parseInt(startMinuteStr, 10);
-    const endHour = parseInt(endHourStr, 10);
-    const endMinute = parseInt(endMinuteStr, 10);
-    const startTimeMinutes = startHour * 60 + startMinute;
-    const endTimeMinutes = endHour * 60 + endMinute;
+    // 判定：曜日セグメントを考慮し、深夜跨ぎは前日・当日を切り分けて評価
+    const allowed = allowedDays ?? allDaysSet;
+    const isOpen = timeRanges.some(({ start, end }) => {
+      if (start <= end) {
+        // 通常レンジ（同日内）
+        if (!allowed.has(todayIndex)) return false;
+        return currentTimeMinutes >= start && currentTimeMinutes <= end;
+      } else {
+        // 深夜跨ぎ（例: 18:00-03:00）
+        if (currentTimeMinutes >= start) {
+          // 当日深夜前（start..24:00）→ 当日曜日適用
+          if (!allowed.has(todayIndex)) return false;
+          return currentTimeMinutes >= start;
+        } else {
+          // 翌日早朝（0:00..end）→ 前日曜日適用
+          if (!allowed.has(prevDayIndex)) return false;
+          return currentTimeMinutes <= end;
+        }
+      }
+    });
 
-    if (endTimeMinutes < startTimeMinutes) {
-      // 深夜営業の場合（例：22:00-02:00）
-      return currentTimeMinutes >= startTimeMinutes || currentTimeMinutes <= endTimeMinutes;
-    } else {
-      // 通常営業の場合
-      return currentTimeMinutes >= startTimeMinutes && currentTimeMinutes <= endTimeMinutes;
-    }
+    return isOpen;
   };
 
   // 駐車場の判定
