@@ -373,6 +373,7 @@
   overflow: hidden;
   /* ピンチズーム・パン操作をコンテナで扱う */
   touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .image-modal-content img {

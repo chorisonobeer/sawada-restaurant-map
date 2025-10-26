@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 
-// シンプルなピンチズーム + パン対応の画像コンポーネント
-// - マルチタッチ（2本指）でズーム
+// 汎用ピンチズーム + パン対応（モバイルSafari/Android対応）
+// - タッチイベントでのマルチタッチピンチをネイティブに処理
 // - 単指ドラッグでパン
-// - ダブルタップで1.5倍トグル
+// - ダブルタップで1.5倍ズームトグル
 // - Wheelでズーム（デスクトップ）
-// - スタイルはコンテナ側で最大サイズを制限する
+// - コンテナ側で overflow/touch-action を設定すること
 
 type Props = {
   src: string;
@@ -21,69 +21,106 @@ const ZoomableImage: React.FC<Props> = ({ src, alt = '', maxScale = 6, className
   const [scale, setScale] = useState(1);
   const [translation, setTranslation] = useState({ x: 0, y: 0 });
 
-  const pointers = useRef<Map<number, PointerEvent>>(new Map());
-  const lastPan = useRef({ x: 0, y: 0 });
-  const lastDistance = useRef<number | null>(null);
   const lastTap = useRef<number>(0);
+  const touchState = useRef<{
+    mode: 'none' | 'pan' | 'pinch';
+    startX: number;
+    startY: number;
+    startTransX: number;
+    startTransY: number;
+    startDist: number;
+    startScale: number;
+  }>({ mode: 'none', startX: 0, startY: 0, startTransX: 0, startTransY: 0, startDist: 0, startScale: 1 });
 
   const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, val));
 
-  const getDistance = (p1: PointerEvent, p2: PointerEvent) => {
-    const dx = p1.clientX - p2.clientX;
-    const dy = p1.clientY - p2.clientY;
+  const dist = (t1: Touch, t2: Touch) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-    pointers.current.set(e.pointerId, e.nativeEvent);
-    lastPan.current = { x: e.nativeEvent.clientX - translation.x, y: e.nativeEvent.clientY - translation.y };
-
-    const now = Date.now();
-    if (now - lastTap.current < 300) {
-      // ダブルタップでズームトグル
-      const next = scale < 1.5 ? 1.5 : 1;
-      setScale(next);
-      if (next === 1) setTranslation({ x: 0, y: 0 });
-    }
-    lastTap.current = now;
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!pointers.current.has(e.pointerId)) return;
-    pointers.current.set(e.pointerId, e.nativeEvent);
-
-    if (pointers.current.size === 1) {
-      // パン
-      const p = Array.from(pointers.current.values())[0];
-      const x = p.clientX - lastPan.current.x;
-      const y = p.clientY - lastPan.current.y;
-      setTranslation({ x, y });
-    } else if (pointers.current.size >= 2) {
-      // ピンチズーム
-      const [p1, p2] = Array.from(pointers.current.values());
-      const dist = getDistance(p1, p2);
-      if (lastDistance.current == null) {
-        lastDistance.current = dist;
+  // タッチ開始
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touches = e.nativeEvent.touches;
+    if (touches.length === 1) {
+      // ダブルタップ検出
+      const now = Date.now();
+      if (now - lastTap.current < 300) {
+        const next = scale < 1.5 ? 1.5 : 1;
+        setScale(next);
+        if (next === 1) setTranslation({ x: 0, y: 0 });
+        lastTap.current = 0; // リセット
         return;
       }
-      const delta = dist / (lastDistance.current || dist);
-      lastDistance.current = dist;
-      const nextScale = clamp(scale * delta, 1, maxScale);
-      setScale(nextScale);
+      lastTap.current = now;
+
+      const t = touches[0];
+      touchState.current = {
+        mode: 'pan',
+        startX: t.clientX,
+        startY: t.clientY,
+        startTransX: translation.x,
+        startTransY: translation.y,
+        startDist: 0,
+        startScale: scale,
+      };
+    } else if (touches.length >= 2) {
+      const d = dist(touches[0], touches[1]);
+      touchState.current = {
+        mode: 'pinch',
+        startX: 0,
+        startY: 0,
+        startTransX: translation.x,
+        startTransY: translation.y,
+        startDist: d,
+        startScale: scale,
+      };
     }
   };
 
-  const onPointerUpOrCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) {
-      lastDistance.current = null;
-    }
-    if (pointers.current.size === 0 && scale === 1) {
-      setTranslation({ x: 0, y: 0 });
+  // タッチ移動
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    // ページスクロール・システムズームを抑制
+    e.preventDefault();
+
+    const touches = e.nativeEvent.touches;
+    const st = touchState.current;
+    if (st.mode === 'pan' && touches.length === 1) {
+      const t = touches[0];
+      const dx = t.clientX - st.startX;
+      const dy = t.clientY - st.startY;
+      setTranslation({ x: st.startTransX + dx, y: st.startTransY + dy });
+    } else if (st.mode === 'pinch' && touches.length >= 2) {
+      const d = dist(touches[0], touches[1]);
+      const ratio = d / (st.startDist || d);
+      const next = clamp(st.startScale * ratio, 1, maxScale);
+      setScale(next);
     }
   };
 
+  const onTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touches = e.nativeEvent.touches;
+    if (touches.length === 0) {
+      // 終了時に状態リセット
+      touchState.current.mode = 'none';
+      if (scale === 1) setTranslation({ x: 0, y: 0 });
+    } else if (touches.length === 1) {
+      // ピンチから単指に戻った場合、パンへ移行
+      const t = touches[0];
+      touchState.current = {
+        mode: 'pan',
+        startX: t.clientX,
+        startY: t.clientY,
+        startTransX: translation.x,
+        startTransY: translation.y,
+        startDist: 0,
+        startScale: scale,
+      };
+    }
+  };
+
+  // ホイール（デスクトップ）
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     const delta = e.deltaY < 0 ? 1.1 : 0.9;
@@ -94,8 +131,9 @@ const ZoomableImage: React.FC<Props> = ({ src, alt = '', maxScale = 6, className
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    // コンテナでタッチジェスチャーを扱う
+    // iOS/Android向けの推奨スタイル
     el.style.touchAction = 'none';
+    el.style.overscrollBehavior = 'contain';
   }, []);
 
   return (
@@ -109,10 +147,9 @@ const ZoomableImage: React.FC<Props> = ({ src, alt = '', maxScale = 6, className
         height: '100%',
         ...style,
       }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUpOrCancel}
-      onPointerCancel={onPointerUpOrCancel}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
       onWheel={onWheel}
     >
       <img

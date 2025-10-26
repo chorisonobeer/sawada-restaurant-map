@@ -339,6 +339,7 @@ Last Modified: 2025-02-28 16:50:00
   overflow: hidden;
   /* ピンチズーム・パン操作をコンテナで扱う */
   touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .image-modal-content img {
