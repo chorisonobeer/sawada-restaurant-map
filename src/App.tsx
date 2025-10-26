@@ -37,7 +37,7 @@ const App: React.FC = React.memo(() => {
   // Google Drive 画像URLをプロキシ化
   const transformImageUrl = useCallback((url?: string): string | undefined => {
     if (!url) return url;
-    const proxyBase = (config as any).image_proxy_url as string | undefined;
+
     const patterns = [
       /https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
       /https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
@@ -49,11 +49,7 @@ const App: React.FC = React.memo(() => {
       if (m && m[1]) { id = m[1]; break; }
     }
     if (!id) return url;
-    // プロキシ設定があれば必ずプロキシを使う（開発はローカル、 本番はNetlify Functions）
-    if (proxyBase) {
-      return `${proxyBase}?id=${id}`;
-    }
-    // プロキシ未設定なら直リンク
+    // 常に直リンクを返す（本番の画像表示を優先し、ローカルプロキシは使用しない）
     return `https://drive.google.com/uc?id=${encodeURIComponent(id)}`;
   }, []);
 

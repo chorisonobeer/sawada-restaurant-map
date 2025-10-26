@@ -520,7 +520,7 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
                   <div className="result-image">
                     {shop['画像'] ? (
                       <img
-                        src={shop['画像'].startsWith('http') ? shop['画像'] : `/${shop['画像']}`}
+                        src={(shop['画像'] && (shop['画像'].startsWith('http') || shop['画像'].startsWith('/'))) ? shop['画像'] : (shop['画像'] ? `/${shop['画像']}` : '')}
                         alt={shop['スポット名']}
                         loading="lazy"
                         decoding="async"
