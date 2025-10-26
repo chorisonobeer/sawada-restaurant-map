@@ -313,6 +313,25 @@
             // フォントファミリーの統一
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           }
+
+          // カテゴリタグ群
+          .result-categories {
+            margin: 6px 0 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+          }
+
+          .category-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            border-radius: 12px;
+            background-color: #eef2f7;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+          }
           
           // 営業状況バッジ
           .status-badge {
@@ -338,6 +357,23 @@
               color: #F57C00;
             }
           }
+        }
+
+        // 画像コンテナ（固定サイズで表示を保証）
+        .result-image {
+          width: 70px;
+          height: 70px;
+          margin-left: 10px;
+          flex: 0 0 70px;
+          overflow: hidden;
+        }
+
+        .result-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 2px;
+          display: block;
         }
       }
     }

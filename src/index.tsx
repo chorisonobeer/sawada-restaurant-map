@@ -89,64 +89,178 @@ window.addEventListener('online', () => {
   debounceUpdateCheck();
 });
 
-// 非侵襲な更新通知トーストの最小実装
+// 非侵襲な更新通知トースト（モダン・フローティング型）
 function showUpdateToast() {
   if (document.getElementById('update-toast')) return;
+
+  // スタイルを一度だけ注入
+  if (!document.getElementById('update-toast-style')) {
+    const style = document.createElement('style');
+    style.id = 'update-toast-style';
+    style.textContent = `
+      .version-update-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        padding: 18px 20px;
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        z-index: 9999;
+        width: calc(100% - 32px);
+        max-width: 480px;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        opacity: 0;
+        transform-origin: bottom center;
+      }
+      .version-update-toast.show {
+        animation: toastIn 0.3s ease-out forwards;
+      }
+      .version-update-toast.hide {
+        animation: toastOut 0.2s ease-out forwards;
+      }
+      .version-update-toast .toast-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 6px;
+      }
+      .version-update-toast .toast-desc {
+        font-size: 14px;
+        font-weight: 400;
+        color: rgba(255,255,255,0.85);
+        margin-bottom: 12px;
+      }
+      .version-update-toast .toast-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .version-update-toast .btn {
+        height: 42px;
+        padding: 0 16px;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: transform 0.1s ease, opacity 0.2s ease, background-color 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .version-update-toast .btn:focus-visible {
+        outline: 2px solid rgba(255,255,255,0.7);
+        outline-offset: 2px;
+      }
+      .version-update-toast .btn-primary {
+        background: var(--app-primary, #4CAF50);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      }
+      .version-update-toast .btn-primary:active { transform: translateY(1px); }
+      .version-update-toast .btn-secondary {
+        background: transparent;
+        color: #999;
+        border-color: rgba(255,255,255,0.3);
+      }
+      .version-update-toast .btn-secondary:active { transform: translateY(1px); }
+      .version-update-toast .btn .ripple {
+        position: absolute;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        width: 10px;
+        height: 10px;
+        background: rgba(255,255,255,0.5);
+        animation: ripple 0.4s ease-out;
+        opacity: 0.9;
+      }
+      @keyframes ripple {
+        from { width: 0; height: 0; opacity: 0.8; }
+        to { width: 200px; height: 200px; opacity: 0; }
+      }
+      @keyframes toastIn {
+        from { opacity: 0; transform: translate(-50%, 20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+      }
+      @keyframes toastOut {
+        from { opacity: 1; transform: translate(-50%, 0); }
+        to { opacity: 0; transform: translate(-50%, 10px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .version-update-toast.show, .version-update-toast.hide {
+          animation: none;
+          opacity: 1;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   const toast = document.createElement('div');
   toast.id = 'update-toast';
-  toast.style.position = 'fixed';
-  toast.style.left = '50%';
-  toast.style.bottom = '16px';
-  toast.style.transform = 'translateX(-50%)';
-  toast.style.background = '#222';
-  toast.style.color = '#fff';
-  toast.style.padding = '10px 14px';
-  toast.style.borderRadius = '8px';
-  toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-  toast.style.zIndex = '9999';
-  toast.style.fontSize = '14px';
-  toast.style.display = 'flex';
-  toast.style.alignItems = 'center';
-  toast.style.gap = '8px';
+  toast.className = 'version-update-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
 
-  const text = document.createElement('span');
-  text.textContent = '新しいバージョンがあります。更新しますか？';
+  const title = document.createElement('div');
+  title.className = 'toast-title';
+  title.textContent = '新しいバージョンがあります';
+
+  const desc = document.createElement('div');
+  desc.className = 'toast-desc';
+  desc.textContent = 'より快適に使えるようになります';
+
+  const actions = document.createElement('div');
+  actions.className = 'toast-actions';
 
   const btnUpdate = document.createElement('button');
+  btnUpdate.className = 'btn btn-primary';
   btnUpdate.textContent = '今すぐ更新';
-  btnUpdate.style.background = '#4CAF50';
-  btnUpdate.style.color = '#fff';
-  btnUpdate.style.border = 'none';
-  btnUpdate.style.padding = '6px 10px';
-  btnUpdate.style.borderRadius = '6px';
-  btnUpdate.style.cursor = 'pointer';
 
-  const btnClose = document.createElement('button');
-  btnClose.textContent = '閉じる';
-  btnClose.style.background = '#555';
-  btnClose.style.color = '#fff';
-  btnClose.style.border = 'none';
-  btnClose.style.padding = '6px 10px';
-  btnClose.style.borderRadius = '6px';
-  btnClose.style.cursor = 'pointer';
+  const btnLater = document.createElement('button');
+  btnLater.className = 'btn btn-secondary';
+  btnLater.textContent = 'あとで';
 
-  btnUpdate.addEventListener('click', () => {
-    // ユーザー任意のリロードで更新を適用
+  // リップル演出（軽め）
+  const addRipple = (e: MouseEvent, target: HTMLElement) => {
+    const rect = target.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.left = `${e.clientX - rect.left}px`;
+    ripple.style.top = `${e.clientY - rect.top}px`;
+    target.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 400);
+  };
+
+  btnUpdate.addEventListener('click', (e) => {
+    addRipple(e, btnUpdate);
     try {
       window.location.reload();
     } finally {
-      document.body.removeChild(toast);
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 200);
     }
   });
 
-  btnClose.addEventListener('click', () => {
-    document.body.removeChild(toast);
+  btnLater.addEventListener('click', (e) => {
+    addRipple(e, btnLater);
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 200);
   });
 
-  toast.appendChild(text);
-  toast.appendChild(btnUpdate);
-  toast.appendChild(btnClose);
+  actions.appendChild(btnUpdate);
+  actions.appendChild(btnLater);
+  toast.appendChild(title);
+  toast.appendChild(desc);
+  toast.appendChild(actions);
   document.body.appendChild(toast);
+
+  // 表示アニメーション
+  requestAnimationFrame(() => toast.classList.add('show'));
 }
 
 window.addEventListener('sw-update-available', showUpdateToast as EventListener);

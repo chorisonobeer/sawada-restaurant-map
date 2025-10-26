@@ -480,6 +480,21 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
                           {getStatusBadgeText(status)}
                         </span>
                       </div>
+                      {(() => {
+                        const cats = shop['カテゴリ']
+                          ? shop['カテゴリ']
+                              .split(/,|、|\s+/)
+                              .map(c => c.trim())
+                              .filter(c => c !== '')
+                          : [];
+                        return cats.length > 0 ? (
+                          <div className="result-categories">
+                            {cats.map((cat, idx) => (
+                              <span className="category-tag" key={`cat-${idx}`}>{cat}</span>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
                     <div className="result-line result-hours">
                       営業時間： {(() => {
                         const hoursRaw = shop['営業時間'] ? String(shop['営業時間']) : '営業時間不明';
@@ -507,7 +522,12 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
                       <img
                         src={shop['画像'].startsWith('http') ? shop['画像'] : `/${shop['画像']}`}
                         alt={shop['スポット名']}
-                        style={{ width: 'auto', height: '100%', margin: 0, display: 'block' }}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div style={{ width: 'auto', height: '100%', background: '#ccc' }}></div>
