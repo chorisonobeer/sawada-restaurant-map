@@ -5,11 +5,15 @@ import './Tabbar.scss'
 import { FaList, FaHome, FaCamera,FaCalendarAlt } from "react-icons/fa"
 import { FaInfoCircle } from "react-icons/fa"
 
-const Content = () => {
+type Props = {
+  onHomeClick?: () => void;
+};
+
+const Content: React.FC<Props> = ({ onHomeClick }) => {
   return (
     <div className="tabbar">
       <ul>
-        <li><Link to="/"><div className="icon"><FaHome /></div><div className="text">ホーム</div></Link></li>
+        <li><Link to="/" onClick={() => { onHomeClick?.(); }}><div className="icon"><FaHome /></div><div className="text">ホーム</div></Link></li>
         <li><Link to="/list"><div className="icon"><FaList /></div><div className="text">一覧</div></Link></li>
         <li><Link to="/images"><div className="icon"><FaCamera /></div><div className="text">写真から探す</div></Link></li>
         <li><Link to="/events"><div className="icon"><FaCalendarAlt /></div><div className="text">イベント</div></Link></li>

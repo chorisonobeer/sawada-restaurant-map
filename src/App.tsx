@@ -1,7 +1,7 @@
 /* 
-Full Path: /src/App.tsx
-Last Modified: 2025-02-28 17:45:00
-*/
+ * /src/App.tsx
+ * Last Modified: 2025-02-28 17:45:00
+ */
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
@@ -25,6 +25,14 @@ const App: React.FC = React.memo(() => {
   const [selectedShop, setSelectedShop] = useState<Pwamap.ShopData | undefined>(undefined);
   const [filteredShops, setFilteredShops] = useState<Pwamap.ShopData[]>([]);
   const location = useLocation();
+
+  // ホームボタン押下時の処理: 詳細を閉じ、地図を現在位置へ
+  const handleHomeClick = useCallback(() => {
+    setSelectedShop(undefined);
+    try {
+      window.dispatchEvent(new Event('map:recenter'));
+    } catch {}
+  }, []);
 
   // Google Drive 画像URLをプロキシ化
   const transformImageUrl = useCallback((url?: string): string | undefined => {
@@ -242,7 +250,7 @@ const App: React.FC = React.memo(() => {
         {persistentMap}
         <div id="modal-root"></div>
         <div className="app-footer">
-          <Tabbar />
+          <Tabbar onHomeClick={handleHomeClick} />
         </div>
       </div>
     </GeolocationProvider>

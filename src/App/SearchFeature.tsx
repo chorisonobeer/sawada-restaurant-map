@@ -214,6 +214,21 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     return isOpen;
   };
 
+  // 営業状況の判定
+  const getShopStatus = (shop: Pwamap.ShopData): 'open' | 'closed' | 'unknown' => {
+    if (!shop['営業時間']) return 'unknown';
+    return isShopOpen(shop) ? 'open' : 'closed';
+  };
+
+  // 営業状況バッジのテキスト
+  const getStatusBadgeText = (status: 'open' | 'closed' | 'unknown'): string => {
+    switch (status) {
+      case 'open': return '営業中';
+      case 'closed': return '閉店中';
+      case 'unknown': return '営業時間不明';
+    }
+  };
+
   // 駐車場の判定
   const hasParkingSpace = (shop: Pwamap.ShopData): boolean => {
     if (!shop['駐車場']) return false;
@@ -448,16 +463,23 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
             <div className="no-results">該当する店舗がありません</div>
           ) : (
             <div className="results-list">
-              {filteredResults.map((shop, index) => (
-                <div
-                  key={`shop-result-${index}`}
-                  className="result-item"
-                  onClick={() => handleResultClick(shop)}
-                >
-                  <div className="result-info">
-                    <div className="result-name">
-                      {shop['スポット名']}
-                    </div>
+              {filteredResults.map((shop, index) => {
+                const status = getShopStatus(shop);
+                return (
+                  <div
+                    key={`shop-result-${index}`}
+                    className={`result-item status-${status}`}
+                    onClick={() => handleResultClick(shop)}
+                  >
+                    <div className="result-info">
+                      <div className="result-header">
+                        <div className="result-name">
+                          {shop['スポット名']}
+                        </div>
+                        <span className={`status-badge ${status}`}>
+                          {getStatusBadgeText(status)}
+                        </span>
+                      </div>
                     <div className="result-line result-hours">
                       営業時間： {(() => {
                         const hoursRaw = shop['営業時間'] ? String(shop['営業時間']) : '営業時間不明';
@@ -492,7 +514,8 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

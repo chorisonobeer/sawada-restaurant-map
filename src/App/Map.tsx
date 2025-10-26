@@ -81,6 +81,7 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
   const [mapObject, setMapObject] = React.useState<any>();
   const [isLoadingMarkers, setIsLoadingMarkers] = useState(false);
   const [isLayerInitialized, setIsLayerInitialized] = useState(false);
+  const geolocateRef = useRef<any>(null);
 
   // マーカーを更新する関数（setData方式）
   const updateMarkers = useCallback((map: any, data: T[]) => {
@@ -271,6 +272,7 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
           showUserLocation: true
         });
         map.addControl(geolocateControl, 'top-right');
+        geolocateRef.current = geolocateControl;
         // 現在地を自動取得
         setTimeout(() => {
           geolocateControl.trigger();
@@ -292,6 +294,21 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
       map.off('load', onMapLoad);
     };
   }, [mapObject, location]);
+
+  // ホーム押下時の現在位置への再中心化イベント
+  useEffect(() => {
+    const handler = () => {
+      try {
+        geolocateRef.current?.trigger();
+      } catch (e) {
+        // no-op
+      }
+    };
+    window.addEventListener('map:recenter', handler);
+    return () => {
+      window.removeEventListener('map:recenter', handler);
+    };
+  }, []);
 
   return (
     <div style={CSS}>
