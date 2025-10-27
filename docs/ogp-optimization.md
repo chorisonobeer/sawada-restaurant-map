@@ -2,15 +2,16 @@
 
 ## 現状把握（2025-10-27時点）
 
+- 公開URL（正）: https://sawata-restaurant-map.netlify.app/
 - 設定ファイル: `public/index.html`
   - `twitter:card`: `summary_large_image`
   - `twitter:site`: `@your_twitter_handle`（プレースホルダー）
   - `twitter:title`: 佐渡佐和田飲食店マップ
   - `twitter:description`: 新潟県佐渡市佐和田町料飲店組合加盟店のMAPです
-  - `twitter:image`: `https://sawada-restaurant-map.netlify.app/ogp-2025.jpg`
-  - `og:url`: `https://sawada-restaurant-map.netlify.app/`
+  - `twitter:image`: `https://sawata-restaurant-map.netlify.app/ogp-2025.jpg`
+  - `og:url`: `https://sawata-restaurant-map.netlify.app/`
   - `og:title`: 佐渡佐和田飲食店マップ
-  - `og:image`: `https://sawada-restaurant-map.netlify.app/ogp-2025.jpg`
+  - `og:image`: `https://sawata-restaurant-map.netlify.app/ogp-2025.jpg`
   - `og:image:width`: `1200`
   - `og:image:height`: `630`
   - `og:image:type`: `image/jpeg`
@@ -81,8 +82,8 @@
 <meta property="og:site_name" content="佐和田料飲店マップ">
 
 <!-- OGP画像の拡張 -->
-<meta property="og:image" content="https://sawada-restaurant-map.netlify.app/ogp-2025.jpg">
-<meta property="og:image:secure_url" content="https://sawada-restaurant-map.netlify.app/ogp-2025.jpg">
+<meta property="og:image" content="https://sawata-restaurant-map.netlify.app/ogp-2025.jpg">
+<meta property="og:image:secure_url" content="https://sawata-restaurant-map.netlify.app/ogp-2025.jpg">
 <meta property="og:image:alt" content="佐和田料飲店マップのOGP画像">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -91,11 +92,11 @@
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@実際のハンドル"> <!-- ない場合は削除 -->
-<meta name="twitter:image" content="https://sawada-restaurant-map.netlify.app/ogp-2025.jpg">
+<meta name="twitter:image" content="https://sawata-restaurant-map.netlify.app/ogp-2025.jpg">
 <meta name="twitter:image:alt" content="佐和田料飲店マップのOGP画像">
 
 <!-- カノニカル -->
-<link rel="canonical" href="https://sawada-restaurant-map.netlify.app/" />
+<link rel="canonical" href="https://sawata-restaurant-map.netlify.app/" />
 ```
 
 ## 変更例（`public/_headers`）
@@ -119,7 +120,7 @@
 
 ```txt
 # Sitemap を自サイトに更新
-Sitemap: https://sawada-restaurant-map.netlify.app/sitemap.xml
+Sitemap: https://sawata-restaurant-map.netlify.app/sitemap.xml
 ```
 
 ## 実施ステップ

@@ -92,8 +92,39 @@ try {
   process.exit(1);
 }
 
+// =====================================================
+// 追加: デプロイURLに合わせて index.html のOGP絶対URLを自動調整
+// =====================================================
+try {
+  const indexPath = path.join(__dirname, '../public/index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  // Netlify が提供する本番URL/デプロイURLを優先
+  const siteUrlRaw = process.env.URL || process.env.DEPLOY_URL || '';
+  const siteUrl = siteUrlRaw ? siteUrlRaw.replace(/\/$/, '') : ''; // 末尾スラッシュ除去
+
+  if (siteUrl) {
+    console.log(`🔗 Using site URL for OGP: ${siteUrl}`);
+
+    // og:url と canonical を現在のサイトドメインへ統一
+    html = html.replace(/(<meta\s+property="og:url"\s+content=")(.*?)("\s*\/>)/, `$1${siteUrl}/$3`);
+    html = html.replace(/(<link\s+rel="canonical"\s+href=")(.*?)("\s*\/>)/, `$1${siteUrl}/$3`);
+
+    // 画像URLはドメインに依存しない置換へ（任意の絶対URLを現在のドメインへ）
+    html = html.replace(/https?:\/\/[^"']+\/ogp\.webp/g, `${siteUrl}/ogp.webp`);
+    html = html.replace(/https?:\/\/[^"']+\/ogp-2025\.jpg/g, `${siteUrl}/ogp-2025.jpg`);
+
+    fs.writeFileSync(indexPath, html);
+    console.log('✅ index.html OGP absolute URLs updated to current site domain');
+  } else {
+    console.log('⚠️ No site URL found in environment (URL/DEPLOY_URL). Skipped OGP URL rewrite.');
+  }
+} catch (error) {
+  console.error('❌ Error updating index.html OGP URLs:', error);
+}
+
 console.log('🎉 Version injection completed successfully!');
 console.log('📋 Summary:');
 console.log(`   - Version: ${buildVersion}`);
 console.log(`   - Timestamp: ${buildTimestamp}`);
-console.log(`   - Files updated: manifest.json, .env.local, version.json`);
+console.log(`   - Files updated: manifest.json, .env.local, version.json, index.html (OGP URLs)`);
