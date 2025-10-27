@@ -1,6 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import './SearchFeature.scss';
 import zen2han from '../lib/zen2han';
+import { GeolocationContext } from '../context/GeolocationContext';
+import { useMemo } from 'react';
+
+// 軽量距離計算（Haversine）
+const toRad = (deg: number) => (deg * Math.PI) / 180;
+const haversineMeters = (from: [number, number], to: [number, number]) => {
+  const [lng1, lat1] = from;
+  const [lng2, lat2] = to;
+  const R = 6371000; // meters
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 // 営業時間から曜日表記を取り除き、時間のみを返す
 const removeWeekdaysFromHours = (hours: string): string => {
@@ -35,6 +52,20 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
   const [filteredResults, setFilteredResults] = useState<Pwamap.ShopData[]>([]);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const { location } = useContext(GeolocationContext);
+
+  // 日本語比較用コラレーター
+  const collator = useMemo(() => new Intl.Collator('ja', { numeric: true, sensitivity: 'base' }), []);
+  const normalize = (s: string) => zen2han(s || '').trim();
+
+  // 店舗との距離を算出（位置情報がなければ Infinity）
+  const computeDistance = useCallback((shop: Pwamap.ShopData): number => {
+    if (!location) return Infinity;
+    const lng = parseFloat(String(shop['経度']));
+    const lat = parseFloat(String(shop['緯度']));
+    if (Number.isNaN(lng) || Number.isNaN(lat)) return Infinity;
+    return haversineMeters([location[0], location[1]], [lng, lat]);
+  }, [location]);
 
   // 検索結果表示中は地図のズームボタン等を隠すためのクラスをボディに付与
   useEffect(() => {
@@ -134,16 +165,13 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     const todayIndex = jstNow.getDay();
     const prevDayIndex = (todayIndex + 6) % 7;
 
-    // 文字列正規化（全角→半角、区切り統一）
     const raw = shop['営業時間'].toString();
     const normalized = zen2han(raw).trim()
       .replace(/[〜～]/g, '-')
       .replace(/[、，]/g, ',');
 
-    // 先頭に曜日セグメントがあれば抽出（例: "月-土 18:00-22:00" や "火,水-日 19:00-00:00"）
     const weekdayMatch = normalized.match(/^\s*((?:毎日|[日月火水木金土](?:\s*(?:-|,)\s*[日月火水木金土])*(?:\s*,\s*[日月火水木金土](?:\s*(?:-|,)\s*[日月火水木金土])*)*))\s+(.+)$/);
 
-    // 曜日セグメントのパース
     const allDaysSet = new Set([0,1,2,3,4,5,6]);
     const parseWeekdaySpec = (spec: string): Set<number> => {
       const s = spec.replace(/\s+/g, '').replace(/[、，]/g, ',');
@@ -164,63 +192,73 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
             }
           }
         } else {
-          // 連結表記（例: 水木）対応のため1文字ずつ評価
           for (const ch of token.split('')) {
             const idx = dayLetters.indexOf(ch);
             if (idx !== -1) result.add(idx);
           }
         }
       }
-      return result.size > 0 ? result : new Set(allDaysSet);
+      return result;
     };
 
-    const allowedDays: Set<number> | undefined = weekdayMatch ? parseWeekdaySpec(weekdayMatch[1]) : undefined;
-    const timesStr = weekdayMatch ? weekdayMatch[2] : normalized; // 曜日セグメントがなければ全文を時間抽出対象に
+    const hoursText = weekdayMatch ? weekdayMatch[2] : normalized;
+    const daysSet = weekdayMatch ? parseWeekdaySpec(weekdayMatch[1]) : new Set([0,1,2,3,4,5,6]);
 
-    // 時間帯抽出（複数レンジ対応）
-    const timeRanges: Array<{ start: number; end: number }> = [];
-    const regex = /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/g;
-    let m: RegExpExecArray | null;
-    while ((m = regex.exec(timesStr)) !== null) {
-      const [, sh, sm, eh, em] = m;
-      const startHour = parseInt(sh, 10);
-      const startMinute = parseInt(sm, 10);
-      const endHour = parseInt(eh, 10);
-      const endMinute = parseInt(em, 10);
-      let startTotal = startHour * 60 + startMinute;
-      let endTotal = endHour * 60 + endMinute;
-      // 24:00を00:00扱い
-      if (endHour === 24 && endMinute === 0) {
-        endTotal = 0;
-      }
-      timeRanges.push({ start: startTotal, end: endTotal });
-    }
+    const ranges = hoursText.split(/\s*,\s*/).filter(Boolean).map((range) => {
+      const m = range.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+      if (!m) return null;
+      const start = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      const end = parseInt(m[3], 10) * 60 + parseInt(m[4], 10);
+      return { start, end };
+    }).filter(Boolean) as { start: number; end: number }[];
 
-    if (timeRanges.length === 0) return false;
+    const includesPrev = ranges.some(r => r.end < r.start);
+    const isTodayIncluded = daysSet.has(todayIndex);
+    const isPrevIncluded = daysSet.has(prevDayIndex);
 
-    // 判定：曜日セグメントを考慮し、深夜跨ぎは前日・当日を切り分けて評価
-    const allowed = allowedDays ?? allDaysSet;
-    const isOpen = timeRanges.some(({ start, end }) => {
-      if (start <= end) {
-        // 通常レンジ（同日内）
-        if (!allowed.has(todayIndex)) return false;
-        return currentTimeMinutes >= start && currentTimeMinutes <= end;
-      } else {
-        // 深夜跨ぎ（例: 18:00-03:00）
-        if (currentTimeMinutes >= start) {
-          // 当日深夜前（start..24:00）→ 当日曜日適用
-          if (!allowed.has(todayIndex)) return false;
-          return currentTimeMinutes >= start;
-        } else {
-          // 翌日早朝（0:00..end）→ 前日曜日適用
-          if (!allowed.has(prevDayIndex)) return false;
-          return currentTimeMinutes <= end;
-        }
-      }
+    const inToday = isTodayIncluded && ranges.some(r => {
+      const s = r.start;
+      const e = r.end < r.start ? 1440 : r.end;
+      return currentTimeMinutes >= s && currentTimeMinutes < e;
     });
 
-    return isOpen;
+    const inPrevTail = includesPrev && isPrevIncluded && ranges.some(r => {
+      if (r.end >= r.start) return false;
+      const s = 0;
+      const e = r.end;
+      return currentTimeMinutes >= s && currentTimeMinutes < e;
+    });
+
+    return inToday || inPrevTail;
   };
+
+  // 並び替え：営業中 → 距離 → 名前（五十音）
+  const sortResults = useCallback((shops: Pwamap.ShopData[]): Pwamap.ShopData[] => {
+    const withCopy = [...shops];
+    withCopy.sort((a, b) => {
+      // 1) 営業中優先
+      const aOpen = isShopOpen(a);
+      const bOpen = isShopOpen(b);
+      if (aOpen !== bOpen) return aOpen ? -1 : 1;
+  
+      // 2) 距離（位置情報がある場合のみ比較）
+      if (location) {
+        const da = computeDistance(a);
+        const db = computeDistance(b);
+        const aValid = Number.isFinite(da);
+        const bValid = Number.isFinite(db);
+        if (aValid && !bValid) return -1;
+        if (!aValid && bValid) return 1;
+        if (aValid && bValid && da !== db) return da - db; // 近い方が上
+      }
+  
+      // 3) 名前（五十音順、全角半角・数字考慮）
+      const aName = normalize(String(a['スポット名'] || ''));
+      const bName = normalize(String(b['スポット名'] || ''));
+      return collator.compare(aName, bName);
+    });
+    return withCopy;
+  }, [location, computeDistance, collator]);
 
   // 営業状況の判定
   const getShopStatus = (shop: Pwamap.ShopData): 'open' | 'closed' | 'unknown' => {
@@ -288,19 +326,21 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
       return true;
     });
 
-    setFilteredResults(filtered);
-    onSearchResults(filtered);
-  }, [data, query, selectedCategory, selectedTag, isOpenNow, hasParking, onSearchResults]);
+    const sorted = sortResults(filtered);
+    setFilteredResults(sorted);
+    onSearchResults(sorted);
+  }, [data, query, selectedCategory, selectedTag, isOpenNow, hasParking, onSearchResults, sortResults]);
 
   // フィルター条件が変わったら再フィルタリング
   useEffect(() => {
     filterShops();
   }, [filterShops]);
 
-  // コンポーネントマウント時にフィルタリング結果を初期化
+  // コンポーネントマウント時にフィルタリング結果を初期化（並び替えも適用）
   useEffect(() => {
-    setFilteredResults(data);
-  }, [data]);
+    const sorted = sortResults(data);
+    setFilteredResults(sorted);
+  }, [data, sortResults]);
 
   // 検索入力ハンドラー
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,15 +354,15 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     setSelectedCategory(category);
     setShowCategoryDropdown(false);
     
-    // 「すべて」選択時は全てのフィルター条件をリセット
     if (category === '') {
       setSelectedTag('');
       setIsOpenNow(false);
       setHasParking(false);
       setQuery('');
       setShowResults(false);
-      // 全データを表示するためにonSearchResultsを呼び出し
-      onSearchResults(data);
+      const sortedAll = sortResults(data);
+      setFilteredResults(sortedAll);
+      onSearchResults(sortedAll);
     }
   };
 
@@ -331,15 +371,15 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
     setSelectedTag(tag);
     setShowTagDropdown(false);
     
-    // 「すべて」選択時は全てのフィルター条件をリセット
     if (tag === '') {
       setSelectedCategory('');
       setIsOpenNow(false);
       setHasParking(false);
       setQuery('');
       setShowResults(false);
-      // 全データを表示するためにonSearchResultsを呼び出し
-      onSearchResults(data);
+      const sortedAll = sortResults(data);
+      setFilteredResults(sortedAll);
+      onSearchResults(sortedAll);
     }
   };
 
@@ -365,8 +405,9 @@ const SearchFeature: React.FC<SearchFeatureProps> = ({ data, onSearchResults, on
             onClick={() => {
               setQuery('');
               setShowResults(false);
-              setFilteredResults(data);
-              onSearchResults(data);
+              const sortedAll = sortResults(data);
+              setFilteredResults(sortedAll);
+              onSearchResults(sortedAll);
             }}
             aria-label="入力をクリア"
           >

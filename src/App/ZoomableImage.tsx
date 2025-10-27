@@ -86,15 +86,31 @@ const ZoomableImage: React.FC<Props> = ({ src, alt = '', maxScale = 6, className
 
     const touches = e.nativeEvent.touches;
     const st = touchState.current;
-    if (st.mode === 'pan' && touches.length === 1) {
+
+    // 二本指へ移行した瞬間にピンチモードへ初期化（単指からの追加に対応）
+    if (touches.length >= 2 && st.mode !== 'pinch') {
+      const d0 = dist(touches[0], touches[1]);
+      touchState.current = {
+        mode: 'pinch',
+        startX: 0,
+        startY: 0,
+        startTransX: translation.x,
+        startTransY: translation.y,
+        startDist: d0,
+        startScale: scale,
+      };
+    }
+
+    if (touches.length === 1 && st.mode === 'pan') {
       const t = touches[0];
       const dx = t.clientX - st.startX;
       const dy = t.clientY - st.startY;
       setTranslation({ x: st.startTransX + dx, y: st.startTransY + dy });
-    } else if (st.mode === 'pinch' && touches.length >= 2) {
+    } else if (touches.length >= 2 && touchState.current.mode === 'pinch') {
       const d = dist(touches[0], touches[1]);
-      const ratio = d / (st.startDist || d);
-      const next = clamp(st.startScale * ratio, 1, maxScale);
+      const base = touchState.current.startDist || d;
+      const ratio = d / base;
+      const next = clamp(touchState.current.startScale * ratio, 1, maxScale);
       setScale(next);
     }
   };
