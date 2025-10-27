@@ -24,6 +24,14 @@
   Cache-Control: public, max-age=3600, must-revalidate
   X-Content-Type-Options: nosniff
 
+/ogp.webp
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+/ogp-2025.jpg
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
 /*
   X-Frame-Options: DENY
   X-XSS-Protection: 1; mode=block
