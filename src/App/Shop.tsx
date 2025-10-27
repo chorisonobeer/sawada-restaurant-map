@@ -7,6 +7,7 @@ import { makeDistanceLabelText } from "./distance-label";
 import { GeolocationContext } from "../context/GeolocationContext";
 import * as turf from "@turf/turf";
 import ZoomableImage from "./ZoomableImage";
+import zen2han from "../lib/zen2han";
 
 type Props = {
   shop: Pwamap.ShopData;
@@ -110,11 +111,19 @@ const Shop: React.FC<Props> = (props) => {
   const hours = removeWeekdaysFromHours(props.shop["営業時間"] || "営業時間不明");
   const closed = props.shop["定休日"] || "定休日不明";
   const address = props.shop["住所"] || "住所不明";
-  const tel = props.shop["TEL"];
+  // TELのフォールバックと正規化
+  const telCandidate = props.shop["TEL"] || props.shop["Tel"] || props.shop["ＴＥＬ"] || props.shop["電話番号"];
+  const tel = typeof telCandidate === 'string' ? telCandidate.trim() : telCandidate;
   const site = props.shop["公式サイト"];
   const parking = props.shop["駐車場"];
   const foundedDate = props.shop["創業年月"];
   const payment = props.shop["支払い方法"];
+
+  // 予約有無の正規化（全角→半角、前後空白除去）
+  const reserveRawCandidate = props.shop["予約有無"] || props.shop["予約"] || props.shop["予約可"] || '';
+  const reserveRaw = reserveRawCandidate != null ? reserveRawCandidate.toString() : '';
+  const reserveNormalized = zen2han(reserveRaw).trim();
+  const canReserveByPhone = !!(tel && (typeof tel !== 'string' || tel !== '')) && reserveNormalized === '有';
 
   // Google Mapsのルート検索URLを生成
   const getGoogleMapsDirectionsUrl = () => {
@@ -276,7 +285,7 @@ const Shop: React.FC<Props> = (props) => {
         )}
 
           <div className="action-buttons">
-            {tel && (
+            {canReserveByPhone && (
               <a href={`tel:${tel}`} className="action-button phone-button">
                 電話で予約する
               </a>
