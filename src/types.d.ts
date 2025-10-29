@@ -5,6 +5,8 @@ interface Window {
 declare namespace Pwamap {
   type ShopData = {
     index: number;
+    緯度: string;
+    経度: string;
     [key: string]: any;
   }
 
@@ -35,4 +37,7 @@ declare namespace Pwamap {
     Twitter?: string;
     X?: string;
   }
+
+  // 地図の座標型（[lng, lat]）
+  type LngLat = [number, number];
 }

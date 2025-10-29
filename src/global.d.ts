@@ -31,3 +31,13 @@ declare namespace Pwamap {
 
   type LngLat = [number, number]
 }
+
+declare global {
+  interface Window {
+    __showUpdateToast?: () => void;
+    __updateToastVisible?: boolean;
+    __pendingReload?: boolean;
+  }
+}
+
+export {};

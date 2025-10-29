@@ -6,6 +6,7 @@ import './index.scss'
 import './global-pull-refresh-disable.css'
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import VersionManager from './utils/versionManager';
+import UpdateNotifier from './utils/UpdateNotifier';
 
 // バージョン管理システムを初期化
 const versionManager = VersionManager.getInstance();
@@ -239,10 +240,12 @@ function showUpdateToast() {
   btnUpdate.addEventListener('click', (e) => {
     addRipple(e, btnUpdate);
     try {
+      (window as any).__pendingReload = true;
       window.location.reload();
     } finally {
       toast.classList.add('hide');
       setTimeout(() => toast.remove(), 200);
+      (window as any).__updateToastVisible = false;
     }
   });
 
@@ -250,6 +253,7 @@ function showUpdateToast() {
     addRipple(e, btnLater);
     toast.classList.add('hide');
     setTimeout(() => toast.remove(), 200);
+    (window as any).__updateToastVisible = false;
   });
 
   actions.appendChild(btnUpdate);
@@ -261,7 +265,11 @@ function showUpdateToast() {
 
   // 表示アニメーション
   requestAnimationFrame(() => toast.classList.add('show'));
+  (window as any).__updateToastVisible = true;
 }
 
-window.addEventListener('sw-update-available', showUpdateToast as EventListener);
-window.addEventListener('app-version-updated', showUpdateToast as EventListener);
+// グローバル公開して、UpdateNotifierから呼べるようにする
+(window as any).__showUpdateToast = showUpdateToast;
+
+// 更新通知の集約と重複ガードを初期化
+UpdateNotifier.getInstance().init();

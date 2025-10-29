@@ -184,19 +184,16 @@ class VersionManager {
   private async updateServiceWorker(): Promise<void> {
     try {
       if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        
-        for (const registration of registrations) {
-          // 新しいService Workerをチェック
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
           await registration.update();
-          
-          // 待機中のService Workerがあれば即座に有効化
           if (registration.waiting) {
             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
           }
+          console.log('🔄 Service Worker updated');
+        } else {
+          console.log('ℹ️ No Service Worker registration found');
         }
-        
-        console.log('🔄 Service Worker updated');
       }
     } catch (error) {
       console.error('❌ Error updating Service Worker:', error);
