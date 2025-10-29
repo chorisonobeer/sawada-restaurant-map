@@ -11,8 +11,8 @@ function Content() {
   const location = useLocation();
 
   useEffect(() => {
-    // 手動ページビュー送信（HashRouter対応）
-    Analytics.pageview();
+    // 手動ページビュー送信（HashRouter対応、trackView 正統APIに統一）
+    Analytics.trackView();
   }, [location.pathname, location.hash]);
 
   return (

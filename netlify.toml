@@ -20,6 +20,19 @@
   to = "/index.html"
   status = 200
 
+# Umami first-party proxy (script and API)
+[[redirects]]
+  from = "/_umami/script.js"
+  to = "https://cloud.umami.is/script.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/_umami/api/*"
+  to = "https://cloud.umami.is/api/:splat"
+  status = 200
+  force = true
+
 # ============================================
 # 基本的なキャッシュ最適化（CSP問題回避版）
 # ============================================
