@@ -14,24 +14,26 @@
   # 環境変数
   environment = { NODE_VERSION = "20" }
 
-# リダイレクト設定 - SPAのためのフォールバック
+# ============================================
+# プロキシ（ステルス化）を最上段に配置
+# ============================================
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Umami first-party proxy (script and API)
-[[redirects]]
-  from = "/_umami/script.js"
+  from = "/_proxy/js"
   to = "https://cloud.umami.is/script.js"
   status = 200
   force = true
 
 [[redirects]]
-  from = "/_umami/api/*"
+  from = "/_proxy/api/*"
   to = "https://cloud.umami.is/api/:splat"
   status = 200
   force = true
+
+# リダイレクト設定 - SPAのためのフォールバック（プロキシの後に評価）
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 # ============================================
 # 基本的なキャッシュ最適化（CSP問題回避版）
@@ -98,3 +100,9 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"
     Expires = "0"
+
+# Umamiステルスプロキシ - キャッシュ抑止
+[[headers]]
+  for = "/_proxy/*"
+  [headers.values]
+    Cache-Control = "no-store"
