@@ -18,6 +18,7 @@ import LazyMap from './App/LazyMap';
 import config from './config.json';
 import './App.scss';
 import { getJSON, setJSON } from './utils/idbStore';
+import Analytics from './utils/analytics';
 
 const App: React.FC = React.memo(() => {
   const [shopList, setShopList] = useState<Pwamap.ShopData[]>([]);
@@ -198,7 +199,12 @@ const App: React.FC = React.memo(() => {
   // 店舗選択ハンドラ
   const handleSelectShop = useCallback((shop: Pwamap.ShopData) => {
     setSelectedShop(shop);
-  }, []);
+    // 計測: 店舗詳細を開いた
+    Analytics.track('view_shop', {
+      shop_name: (shop['スポット名'] || '').toString(),
+      path: `${location.pathname}${location.hash}`,
+    });
+  }, [location.pathname, location.hash]);
 
   // 検索結果を受け取るハンドラ
   const handleSearchResults = useCallback((results: Pwamap.ShopData[]) => {

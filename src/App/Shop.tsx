@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useContext, useMemo } from "react";
+import Analytics from "../utils/analytics";
 import Links from "./Links";
 import "./Shop.scss";
 import { AiOutlineClose } from "react-icons/ai";
@@ -201,6 +202,12 @@ const Shop: React.FC<Props> = (props) => {
               target="_blank" 
               rel="noopener noreferrer"
               className="route-link"
+              onClick={() => {
+                Analytics.track('open_map', {
+                  shop_name: spotName,
+                  action: 'directions',
+                });
+              }}
             >
               この場所に行くルート
             </a>
@@ -226,7 +233,15 @@ const Shop: React.FC<Props> = (props) => {
             {tel && (
               <div className="info-item">
                 <span className="info-label">電話番号:</span> 
-                <a href={`tel:${tel}`} className="phone-link">{tel}</a>
+                <a 
+                  href={`tel:${tel}`} 
+                  className="phone-link"
+                  onClick={() => {
+                    Analytics.track('reserve_phone', {
+                      shop_name: spotName,
+                    });
+                  }}
+                >{tel}</a>
               </div>
             )}
             {foundedDate && (
@@ -286,7 +301,15 @@ const Shop: React.FC<Props> = (props) => {
 
           <div className="action-buttons">
             {canReserveByPhone && (
-              <a href={`tel:${tel}`} className="action-button phone-button">
+              <a 
+                href={`tel:${tel}`} 
+                className="action-button phone-button"
+                onClick={() => {
+                  Analytics.track('reserve_phone', {
+                    shop_name: spotName,
+                  });
+                }}
+              >
                 電話で予約する
               </a>
             )}
