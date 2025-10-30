@@ -11,12 +11,8 @@ function Content() {
   const location = useLocation();
 
   useEffect(() => {
-    // HashRouter遷移時のページビュー送信（重複防止のため少し遅延）
-    const timer = setTimeout(() => {
-      Analytics.trackView();
-    }, 50);
-    
-    return () => clearTimeout(timer);
+    // HashRouter遷移時のページビュー送信（即時）
+    Analytics.trackView();
   }, [location.pathname, location.hash]);
 
   return (

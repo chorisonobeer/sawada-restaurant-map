@@ -38,9 +38,11 @@ const DebugAnalyticsButton: React.FC = () => {
     setSending(true);
     const route = currentRoute();
     try {
-      console.log('[Umami Debug] Fire manual event & pageview', { mode, route });
-      Analytics.track('debug_fire', { mode, route, ts: Date.now() });
+      console.log('[Umami Debug] Fire pageview then manual event', { mode, route });
+      // 先にページビューを送信して、イベントのページコンテキストを正しく更新
       Analytics.trackView(route);
+      // 次にイベントを送信（最新ページに紐付く）
+      Analytics.track('debug_fire', { mode, route, ts: Date.now() });
     } finally {
       // 軽いクールダウンで誤連打抑制
       setTimeout(() => setSending(false), 600);
