@@ -11,8 +11,12 @@ function Content() {
   const location = useLocation();
 
   useEffect(() => {
-    // 手動ページビュー送信（HashRouter対応、trackView 正統APIに統一）
-    Analytics.trackView();
+    // HashRouter遷移時のページビュー送信（重複防止のため少し遅延）
+    const timer = setTimeout(() => {
+      Analytics.trackView();
+    }, 50);
+    
+    return () => clearTimeout(timer);
   }, [location.pathname, location.hash]);
 
   return (

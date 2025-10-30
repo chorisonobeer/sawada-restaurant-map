@@ -39,8 +39,17 @@ function isReady() {
 
 function currentUrl() {
   if (typeof window === 'undefined') return undefined;
-  // HashRouter: include hash to distinguish routes
-  return window.location.pathname + window.location.search + window.location.hash;
+  
+  // HashRouter: extract actual route from hash
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#/')) {
+    // Extract route from hash: "#/list" -> "/list"
+    const route = hash.substring(1);
+    return route + window.location.search;
+  }
+  
+  // Fallback for non-hash routes or root
+  return window.location.pathname + window.location.search;
 }
 
 function sendTrack(name: string, data?: Record<string, unknown>) {
