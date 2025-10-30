@@ -39,17 +39,9 @@ function isReady() {
 
 function currentUrl() {
   if (typeof window === 'undefined') return undefined;
-  
-  // HashRouter: extract actual route from hash
-  const hash = window.location.hash;
-  if (hash && hash.startsWith('#/')) {
-    // Extract route from hash: "#/list" -> "/list"
-    const route = hash.substring(1);
-    return route + window.location.search;
-  }
-  
-  // Fallback for non-hash routes or root
-  return window.location.pathname + window.location.search;
+  // Umami はデフォルトでハッシュを含めないため、HashRouterの実ルートを反映させる
+  // 常に pathname + search + hash を返す（例: "/#/list?category=sushi"）
+  return window.location.pathname + window.location.search + window.location.hash;
 }
 
 function sendTrack(name: string, data?: Record<string, unknown>) {
@@ -66,8 +58,8 @@ function sendView(url?: string) {
     if (window.umami?.trackView) {
       window.umami.trackView(u);
     } else {
-      // Fallback for older script versions
-      window.umami?.track('pageview', u ? { path: u } : undefined);
+      // Fallback: 明示的に URL を渡す（v2では 'url' キーが正）
+      window.umami?.track('pageview', u ? { url: u } : undefined);
     }
   } catch (e) {
     // swallow
