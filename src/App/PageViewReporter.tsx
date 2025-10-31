@@ -1,7 +1,7 @@
 /** 
  * /src/App/PageViewReporter.tsx
- * 2025-10-31T12:40+09:00
- * 変更概要: 新規追加 - HashRouter遷移の手動ページビュー送信
+ * 2025-10-31T12:56+09:00
+ * 変更概要: trackView(location.href)送信に切り替え（ハッシュ含む絶対URL）
  */
 import React from 'react';
 import { useLocation } from 'react-router-dom';
@@ -11,9 +11,9 @@ const PageViewReporter: React.FC = () => {
   const location = useLocation();
 
   React.useEffect(() => {
-    const url = `${location.pathname}${location.search}`;
-    Analytics.track('pageview', { url });
-  }, [location.pathname, location.search]);
+    const href = typeof window !== 'undefined' ? window.location.href : `${location.pathname}${location.search}${location.hash}`;
+    Analytics.trackView(href);
+  }, [location.pathname, location.search, location.hash]);
 
   return null;
 };

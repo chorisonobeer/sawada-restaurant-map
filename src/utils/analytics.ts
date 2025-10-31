@@ -55,8 +55,12 @@ function sendTrack(name: string, data?: Record<string, unknown>) {
 function sendView(url?: string) {
   try {
     const u = url ?? currentUrl();
-    // Umami v2の正規APIに統一: 明示的に URL を渡す
-    window.umami?.track('pageview', u ? { url: u } : undefined);
+    // Umami公式CDNでは trackView が利用可能。なければ従来の track にフォールバック。
+    if (window.umami?.trackView) {
+      window.umami.trackView(u);
+    } else {
+      window.umami?.track('pageview', u ? { url: u } : undefined);
+    }
   } catch (e) {
     // swallow
   }
@@ -142,6 +146,6 @@ export const Analytics = {
 export default Analytics;
 /** 
  * /src/utils/analytics.ts
- * 2025-10-31T12:40+09:00
- * 変更概要: Pageview送信をtrack('pageview', { url })に統一
+ * 2025-10-31T12:55+09:00
+ * 変更概要: trackView優先に変更（なければtrack('pageview', { url })にフォールバック）
  */
