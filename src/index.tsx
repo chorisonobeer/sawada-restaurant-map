@@ -1,3 +1,8 @@
+/* 
+ * /src/index.tsx
+ * 2025-10-31T12:40+09:00
+ * 変更概要: HashRouter直下にPageViewReporterを配線して手動ページビュー送信を有効化
+ */
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter } from "react-router-dom";
@@ -7,6 +12,7 @@ import './global-pull-refresh-disable.css'
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import VersionManager from './utils/versionManager';
 import UpdateNotifier from './utils/UpdateNotifier';
+import PageViewReporter from './App/PageViewReporter';
 
 // バージョン管理システムを初期化
 const versionManager = VersionManager.getInstance();
@@ -16,6 +22,7 @@ const versionManager = VersionManager.getInstance();
 ReactDOM.render(
   <React.StrictMode>
     <HashRouter>
+      <PageViewReporter />
       <Container />
     </HashRouter>
   </React.StrictMode>,
