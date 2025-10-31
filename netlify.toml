@@ -15,19 +15,8 @@
   environment = { NODE_VERSION = "20" }
 
 # ============================================
-# プロキシ（ステルス化）を最上段に配置
+# （削除）Umamiステルスプロキシ
 # ============================================
-[[redirects]]
-  from = "/_proxy/js"
-  to = "https://cloud.umami.is/script.js"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/_proxy/api/*"
-  to = "https://cloud.umami.is/api/:splat"
-  status = 200
-  force = true
 
 # リダイレクト設定 - SPAのためのフォールバック（プロキシの後に評価）
 [[redirects]]
@@ -102,7 +91,4 @@
     Expires = "0"
 
 # Umamiステルスプロキシ - キャッシュ抑止
-[[headers]]
-  for = "/_proxy/*"
-  [headers.values]
-    Cache-Control = "no-store"
+## 削除済み

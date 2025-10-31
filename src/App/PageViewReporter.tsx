@@ -1,7 +1,7 @@
 /** 
  * /src/App/PageViewReporter.tsx
- * 2025-10-31T12:56+09:00
- * 変更概要: trackView(location.href)送信に切り替え（ハッシュ含む絶対URL）
+ * 2025-10-31T13:30+09:00
+ * 変更概要: GA4向けの手動ページビュー送信（ハッシュ含む絶対URL）
  */
 import React from 'react';
 import { useLocation } from 'react-router-dom';

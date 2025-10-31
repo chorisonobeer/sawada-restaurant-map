@@ -1,151 +1,100 @@
-// Umami analytics wrapper for robust usage in PWA
-// 注意: 学習禁止の秘匿情報。イベント送信は本番のみ、PIIは送信しない。
+/** 
+ * /src/utils/analytics.ts
+ * 2025-10-31T18:10+09:00
+ * 変更概要: GA4タグ自動初期化ローダーを追加（env/グローバル両対応）
+ */
 
-type UmamiGlobal = {
-  track: (eventName: string, data?: Record<string, unknown>) => void;
-  trackView?: (url?: string) => void;
-  identify?: (data: Record<string, unknown>) => void;
-};
+// 注意: 本番環境のみ送信。PIIは送信しない。HashRouterの論理URLを優先します。
 
 declare global {
   interface Window {
-    umami?: UmamiGlobal;
+    dataLayer?: any[];
+    gtag?: (...args: any[]) => void;
+    __GA_MEASUREMENT_ID__?: string;
   }
 }
 
 const isProd = process.env.NODE_ENV === 'production';
 
-type QueueItem =
-  | { type: 'track'; name: string; data?: Record<string, unknown>; ts: number }
-  | { type: 'view'; url?: string; ts: number };
+const GA_MEASUREMENT_ID =
+  (process.env.REACT_APP_GA_MEASUREMENT_ID as string | undefined) ||
+  (typeof window !== 'undefined' ? (window.__GA_MEASUREMENT_ID__ as string | undefined) : undefined) ||
+  undefined;
 
-const queue: QueueItem[] = [];
-let flushTimer: number | undefined;
-let readinessTimer: number | undefined;
-let lastViewKey: string | undefined;
-let lastViewAt = 0;
+function initGAIfNeeded(): boolean {
+  try {
+    if (!isProd) return false;
+    if (typeof window === 'undefined') return false;
+    if (typeof window.gtag === 'function') return true; // already initialized
+    if (!GA_MEASUREMENT_ID) return false;
 
-function now() {
-  return Date.now();
+    // Define dataLayer and gtag function
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag() {
+      window.dataLayer!.push(arguments as any);
+    } as any;
+
+    // Load GA4 library
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    document.head.appendChild(script);
+
+    // Init config (disable auto page_view for SPA)
+    window.gtag('js', new Date());
+    window.gtag('config', GA_MEASUREMENT_ID, { send_page_view: false });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function isOnline() {
-  return typeof navigator === 'undefined' ? true : navigator.onLine !== false;
-}
+// Attempt initialization on module load
+initGAIfNeeded();
 
 function isReady() {
-  return isProd && typeof window !== 'undefined' && !!window.umami;
+  return isProd && typeof window !== 'undefined' && typeof window.gtag === 'function';
 }
 
-function currentUrl() {
+function currentRoutePath(): string | undefined {
   if (typeof window === 'undefined') return undefined;
-  // Umami はデフォルトでハッシュを含めないため、HashRouterの実ルートを反映させる
-  // 常に pathname + search + hash を返す（例: "/#/list?category=sushi"）
-  return window.location.pathname + window.location.search + window.location.hash;
+  const { location } = window;
+  // HashRouter: "#/list" → "/list" を優先。無ければ pathname+search。
+  const hash = location.hash || '';
+  if (hash.startsWith('#/')) {
+    const path = hash.substring(1); // remove leading '#'
+    return path + (location.search || '');
+  }
+  const path = location.pathname + (location.search || '');
+  return path || '/';
 }
 
-function sendTrack(name: string, data?: Record<string, unknown>) {
+function track(name: string, data: Record<string, unknown> = {}): void {
   try {
-    window.umami?.track(name, data);
-  } catch (e) {
-    // swallow
-  }
+    if (!isReady()) initGAIfNeeded();
+    if (!isReady()) return;
+    window.gtag!('event', name, data);
+  } catch {}
 }
 
-function sendView(url?: string) {
+function trackView(url?: string): void {
   try {
-    const u = url ?? currentUrl();
-    // Umami公式CDNでは trackView が利用可能。なければ従来の track にフォールバック。
-    if (window.umami?.trackView) {
-      window.umami.trackView(u);
-    } else {
-      window.umami?.track('pageview', u ? { url: u } : undefined);
-    }
-  } catch (e) {
-    // swallow
-  }
-}
-
-function flushQueue() {
-  if (!isReady() || !isOnline()) return;
-  while (queue.length) {
-    const item = queue.shift()!;
-    if (item.type === 'track') {
-      sendTrack(item.name, item.data);
-    } else {
-      sendView(item.url);
-    }
-  }
-}
-
-function scheduleFlush(delay = 100) {
-  if (flushTimer) {
-    clearTimeout(flushTimer);
-  }
-  flushTimer = window.setTimeout(() => {
-    flushQueue();
-  }, delay);
-}
-
-function ensureReadinessWatcher() {
-  if (readinessTimer) return;
-  readinessTimer = window.setInterval(() => {
-    if (isReady()) {
-      clearInterval(readinessTimer as any);
-      readinessTimer = undefined;
-      scheduleFlush(0);
-    }
-  }, 250);
-}
-
-function track(name: string, data?: Record<string, unknown>) {
-  if (!isProd) return;
-  if (!isReady() || !isOnline()) {
-    queue.push({ type: 'track', name, data, ts: now() });
-    ensureReadinessWatcher();
-    return;
-  }
-  sendTrack(name, data);
-}
-
-function trackView(url?: string) {
-  if (!isProd) return;
-  const u = url ?? currentUrl();
-  // simple dedupe within 750ms for same url
-  const key = u || 'unknown';
-  const t = now();
-  if (lastViewKey === key && t - lastViewAt < 750) {
-    return;
-  }
-  lastViewKey = key;
-  lastViewAt = t;
-
-  if (!isReady() || !isOnline()) {
-    queue.push({ type: 'view', url: u, ts: t });
-    ensureReadinessWatcher();
-    return;
-  }
-  sendView(u);
-}
-
-// Auto-flush on connectivity and visibility changes
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', () => scheduleFlush(0));
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) scheduleFlush(0);
-  });
+    if (!isReady()) initGAIfNeeded();
+    if (!isReady()) return;
+    const page_location = url || (typeof window !== 'undefined' ? window.location.href : undefined);
+    const page_path = currentRoutePath();
+    // GA4 推奨の page_view 手動送信
+    window.gtag!('event', 'page_view', {
+      page_location,
+      page_path,
+    });
+  } catch {}
 }
 
 export const Analytics = {
   track,
   trackView,
-  // Backward-compatible alias
   pageview: (path?: string) => trackView(path),
 };
 
 export default Analytics;
-/** 
- * /src/utils/analytics.ts
- * 2025-10-31T12:55+09:00
- * 変更概要: trackView優先に変更（なければtrack('pageview', { url })にフォールバック）
- */
