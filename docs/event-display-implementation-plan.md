@@ -51,7 +51,7 @@ event_data_url: https://docs.google.com/spreadsheets/d/e/XXXX/pub?gid=XXXX&singl
   "data_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5q83Qk_jPl1J5YEY9s1D-aGySypqiFuJf8QIDzYr-3W2a2RIrk3g0d6QlRgHj8NzbF3xEjLjfRIfj/pub?gid=208511176&single=true&output=csv",
   "form_url": null,
   "logo_image_url": "/logo.svg",
-  "background_image_url": "/back.jpg",
+  "background_image_url": "/back.webp",
   "primary_color": "#00A0E6",
   "orderby": "distance",
   "event_data_url": null
