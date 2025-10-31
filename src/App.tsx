@@ -14,7 +14,6 @@ import Images from './App/Images';
 import AboutUs from './App/AboutUs';
 import Events from './App/Events';
 import Tabbar from './App/Tabbar';
-import DebugAnalyticsButton from './App/DebugAnalyticsButton';
 import LazyMap from './App/LazyMap';
 import config from './config.json';
 import './App.scss';
@@ -271,8 +270,6 @@ const App: React.FC = React.memo(() => {
         </div>
         {persistentMap}
         <div id="modal-root"></div>
-        {/* デバッグ用計測ボタン（常時表示、後で削除予定） */}
-        <DebugAnalyticsButton />
         <div className="app-footer">
           <Tabbar onHomeClick={handleHomeClick} />
         </div>
