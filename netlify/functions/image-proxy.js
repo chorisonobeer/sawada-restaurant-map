@@ -89,7 +89,7 @@ exports.handler = async (event) => {
       isBase64Encoded: true,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=604800', // 7 days
+        'Cache-Control': 'public, max-age=604800', // 7日間キャッシュ
       },
       body: base64Body,
     };

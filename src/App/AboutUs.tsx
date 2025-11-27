@@ -11,24 +11,35 @@ import { FaPlus } from 'react-icons/fa';
 // スポンサー企業情報の型定義
 type Sponsor = {
   name: string;
+  description: string;
   imageUrl: string;
   linkUrl: string;
 };
 
-// スポンサー企業のサンプルデータ
+// スポンサー企業のデータ
 const sponsors: Sponsor[] = [
-  { name: 'スポンサー1', imageUrl: '/sponsors/sponsor1.png', linkUrl: 'https://example.com/sponsor1' },
-  { name: 'スポンサー2', imageUrl: '/sponsors/sponsor2.png', linkUrl: 'https://example.com/sponsor2' },
-  { name: 'スポンサー3', imageUrl: '/sponsors/sponsor3.png', linkUrl: 'https://example.com/sponsor3' },
-  { name: 'スポンサー4', imageUrl: '/sponsors/sponsor4.png', linkUrl: 'https://example.com/sponsor4' },
-  { name: 'スポンサー5', imageUrl: '/sponsors/sponsor5.png', linkUrl: 'https://example.com/sponsor5' },
-  { name: 'スポンサー6', imageUrl: '/sponsors/sponsor6.png', linkUrl: 'https://example.com/sponsor6' },
-  { name: 'スポンサー7', imageUrl: '/sponsors/sponsor7.png', linkUrl: 'https://example.com/sponsor7' },
-  { name: 'スポンサー8', imageUrl: '/sponsors/sponsor8.png', linkUrl: 'https://example.com/sponsor8' },
-  { name: 'スポンサー9', imageUrl: '/sponsors/sponsor9.png', linkUrl: 'https://example.com/sponsor9' },
-  { name: 'スポンサー10', imageUrl: '/sponsors/sponsor10.png', linkUrl: 'https://example.com/sponsor10' },
-  { name: 'スポンサー11', imageUrl: '/sponsors/sponsor11.png', linkUrl: 'https://example.com/sponsor11' },
-  { name: 'スポンサー12', imageUrl: '/sponsors/sponsor12.png', linkUrl: 'https://example.com/sponsor12' },
+  { 
+    name: '尾畑酒造', 
+    description: '尾畑酒造は1892年の創業以来、世界農業遺産の島で米、水、人にそれらを育む佐渡を加えた四つの宝を和して醸す「四宝和醸」を掲げ、廃校を酒蔵に再生した学校蔵も含め、佐渡と共に歩み続けています', 
+    imageUrl: '/sponsors/尾畑酒造＿バナー.png', 
+    linkUrl: '#' // 実際のURLに置き換える必要があります
+  },
+  { 
+    name: '加藤酒造店', 
+    description: '代表銘柄は「金鶴」。「質実な佐渡の地酒」の姿勢を大切に、地元の米と水で佐渡の人々のくらしに根ざした地酒をつくっています。', 
+    imageUrl: '/sponsors/金鶴.png', 
+    linkUrl: 'https://example.com/加藤酒造店' // 実際のURLに置き換える必要があります
+  },
+  { name: 'スポンサー3', description: '', imageUrl: '/sponsors/sponsor3.png', linkUrl: 'https://example.com/sponsor3' },
+  { name: 'スポンサー4', description: '', imageUrl: '/sponsors/sponsor4.png', linkUrl: 'https://example.com/sponsor4' },
+  { name: 'スポンサー5', description: '', imageUrl: '/sponsors/sponsor5.png', linkUrl: 'https://example.com/sponsor5' },
+  { name: 'スポンサー6', description: '', imageUrl: '/sponsors/sponsor6.png', linkUrl: 'https://example.com/sponsor6' },
+  { name: 'スポンサー7', description: '', imageUrl: '/sponsors/sponsor7.png', linkUrl: 'https://example.com/sponsor7' },
+  { name: 'スポンサー8', description: '', imageUrl: '/sponsors/sponsor8.png', linkUrl: 'https://example.com/sponsor8' },
+  { name: 'スポンサー9', description: '', imageUrl: '/sponsors/sponsor9.png', linkUrl: 'https://example.com/sponsor9' },
+  { name: 'スポンサー10', description: '', imageUrl: '/sponsors/sponsor10.png', linkUrl: 'https://example.com/sponsor10' },
+  { name: 'スポンサー11', description: '', imageUrl: '/sponsors/sponsor11.png', linkUrl: 'https://example.com/sponsor11' },
+  { name: 'スポンサー12', description: '', imageUrl: '/sponsors/sponsor12.png', linkUrl: 'https://example.com/sponsor12' },
 ];
 
 const Content = () => {
@@ -76,10 +87,10 @@ const Content = () => {
         <h2>マップの使い方</h2>
         <p>このマップでは以下の方法でお店を探すことができます：</p>
         <ul>
-          <li><strong>ホーム画面</strong>：地図上でお店の位置を確認できます。マーカーをタップするとお店の詳細が表示されます。</li>
-          <li><strong>一覧画面</strong>：すべてのお店をリスト形式で表示します。現在地からの距離順に並んでいます。</li>
+          <li><strong>ホーム画面</strong>：地図上でお店の位置を確認できます。マーカーをタップするとお店の詳細が表示されます。検索機能もこちらにあります。</li>
+          <li><strong>一覧画面</strong>：すべてのお店をリスト形式で表示します。現在地からの距離順に並んでいます。カテゴリ別にも表示できます。</li>
           <li><strong>写真から探す</strong>：お店の写真を一覧で見ることができます。気になる写真をタップするとお店の詳細が表示されます。</li>
-          <li><strong>検索機能</strong>：画面上部の検索ボックスからキーワードでお店を検索できます。</li>
+          <li><strong>イベント</strong>：佐和田町で開催されるイベント情報を確認できます。参加ブルワリーなどの詳細も掲載しています。</li>
         </ul>
         <p>
           各お店の詳細ページでは、営業時間、定休日、住所、写真などの情報を確認できます。
@@ -91,8 +102,14 @@ const Content = () => {
         
         <div className="sponsors-grid">
           {sponsors.map((sponsor, index) => (
-            <div key={index} className="sponsor-item">
-              <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer">
+            <div key={index} className="sponsor-card">
+              <div className="sponsor-info">
+                <h3 className="sponsor-name">{sponsor.name}</h3>
+                {sponsor.description && (
+                  <p className="sponsor-description">{sponsor.description}</p>
+                )}
+              </div>
+              <a href={sponsor.linkUrl} target="_blank" rel="noopener noreferrer" className="sponsor-link">
                 <img 
                   src={sponsor.imageUrl} 
                   alt={sponsor.name}
@@ -103,7 +120,6 @@ const Content = () => {
                     (e.target as HTMLImageElement).src = '/sponsors/placeholder.png';
                   }}
                 />
-                <span className="sponsor-name">{sponsor.name}</span>
               </a>
             </div>
           ))}

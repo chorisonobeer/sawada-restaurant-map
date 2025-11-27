@@ -51,7 +51,7 @@ const server = http.createServer(async (req, res) => {
     const buffer = await response.buffer();
     res.writeHead(200, {
       'Content-Type': contentType,
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'public, max-age=86400', // 24時間キャッシュ
       'Access-Control-Allow-Origin': '*',
     });
     res.end(buffer);

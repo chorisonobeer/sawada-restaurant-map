@@ -9,6 +9,45 @@ import { GeolocationContext } from "../context/GeolocationContext";
 import * as turf from "@turf/turf";
 import ZoomableImage from "./ZoomableImage";
 import zen2han from "../lib/zen2han";
+import config from '../config.json';
+
+// Google Drive 画像URLをプロキシ化する関数
+const transformImageUrl = (url?: string): string | undefined => {
+  if (!url) return url;
+
+  // すでに許可された形式（相対パスやHTTP(S)以外）ならそのまま返す
+  if (url.startsWith('/') || url.startsWith('data:')) return url;
+
+  // Google Driveの各種URLからIDを抽出
+  const patterns = [
+    /https?:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /https?:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+    /https?:\/\/drive\.google\.com\/uc\?(?:export=(?:view|download)&)?id=([a-zA-Z0-9_-]+)/,
+    /https?:\/\/drive\.google\.com\/thumbnail\?id=([a-zA-Z0-9_-]+)/
+  ];
+  let id: string | null = null;
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m && m[1]) { id = m[1]; break; }
+  }
+
+  // IDが取れない場合はそのまま返す（外部ホストやローカル画像など）
+  if (!id) return url;
+
+  // 実行環境に応じてプロキシベースURLを決定
+  const isLocal = typeof window !== 'undefined' && (/^localhost$|^127\.0\.0\.1$/.test(window.location.hostname) || window.location.hostname === '::1');
+  const proxyBase = isLocal
+    ? (config.image_proxy_url_dev || config.image_proxy_url)
+    : (config.image_proxy_url || '/.netlify/functions/image-proxy');
+
+  // プロキシURLを返す（本番はNetlify Functionsを前提）
+  if (proxyBase) {
+    return `${proxyBase}?id=${encodeURIComponent(id)}`;
+  }
+
+  // フォールバック：サムネイルAPI（主にローカルでの確認用）
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w640`;
+};
 
 type Props = {
   shop: Pwamap.ShopData;
@@ -148,7 +187,10 @@ const Shop: React.FC<Props> = (props) => {
       .map(key => props.shop[key])
       .map(img => (img || '').trim())
       .filter(img => img !== '')
-      .map(img => (img.startsWith('http') || img.startsWith('/')) ? img : `/${img}`);
+      .map(img => {
+        const transformedUrl = transformImageUrl(img);
+        return transformedUrl || (img.startsWith('http') || img.startsWith('/')) ? img : `/${img}`;
+      });
   }, [props.shop]);
 
     const handleImageLoad = (idx: number) => {
@@ -288,10 +330,9 @@ const Shop: React.FC<Props> = (props) => {
         {expandedImage && (
           <div className="image-modal" onClick={closeExpandedImage}>
             <div className="image-modal-content" onClick={e => e.stopPropagation()}>
--              <img src={expandedImage} alt="拡大画像" />
-+              <div style={{ width: '90vw', height: '70vh' }}>
-+                <ZoomableImage src={expandedImage} alt="拡大画像" />
-+              </div>
+              <div style={{ width: '90vw', height: '70vh' }}>
+                <ZoomableImage src={expandedImage} alt="拡大画像" />
+              </div>
                <button className="close-modal" onClick={closeExpandedImage}>
                  <AiOutlineClose size="24px" color="#FFFFFF" />
                </button>
