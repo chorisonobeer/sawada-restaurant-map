@@ -1,6 +1,7 @@
 {
-  "version": "2025.10.27.0236",
-  "timestamp": 1761500207790,
-  "buildDate": "2025-10-26T17:36:47.790Z",
+  "version": "2025.11.28.0538",
+  "timestamp": 1764275920966,
+  "buildDate": "2025-11-27T20:38:40.966Z",
+  "hash": "89cfc3c6",
   "environment": "development"
 }

@@ -14,6 +14,10 @@ const buildTimestamp = now.getTime();
 const buildVersion = `${now.getFullYear()}.${(now.getMonth() + 1).toString().padStart(2, '0')}.${now.getDate().toString().padStart(2, '0')}.${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
 const buildDate = now.toISOString();
 
+// ハッシュ値を生成（簡易版）
+const crypto = require('crypto');
+const buildHash = crypto.createHash('sha256').update(buildVersion + buildTimestamp).digest('hex').substring(0, 8);
+
 console.log('🚀 Version injection started...');
 console.log(`📅 Build Version: ${buildVersion}`);
 console.log(`⏰ Build Timestamp: ${buildTimestamp}`);
@@ -79,6 +83,7 @@ const versionInfo = {
   version: buildVersion,
   timestamp: buildTimestamp,
   buildDate: buildDate,
+  hash: buildHash,
   environment: process.env.NODE_ENV || 'development'
 };
 
