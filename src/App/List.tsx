@@ -189,11 +189,24 @@ const Content = (props: Props) => {
   const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
   const listRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
   const { location } = useContext(GeolocationContext);
   const initializationRef = useRef<boolean>(false);
 
+  // パフォーマンス測定用
+  const renderStartTime = useRef<number | null>(null);
+
   const [searchParams] = useSearchParams();
   const queryCategory = searchParams.get('category');
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // 初期データの設定
   useEffect(() => {
@@ -203,6 +216,7 @@ const Content = (props: Props) => {
 
     const initializeData = async () => {
       initializationRef.current = true;
+      if (!mountedRef.current) return;
       setIsInitializing(true);
       performance.mark('list-init-start');
       
@@ -215,6 +229,7 @@ const Content = (props: Props) => {
           process.env.REACT_APP_ORDERBY === 'distance' &&
           cachedSortedData.length > 0
         ) {
+          if (!mountedRef.current) return;
           setData(cachedSortedData);
           setList(cachedSortedData.slice(0, INITIAL_LOAD_SIZE));
           setDisplayCount(INITIAL_LOAD_SIZE);
@@ -229,9 +244,9 @@ const Content = (props: Props) => {
         if (cachedData && cachedData.length > 0) {
           filteredData = cachedData;
         } else {
-          filteredData = props.data;
+          filteredData = props.data || []; // props.dataがundefinedの場合に備えて空配列を設定
           if (queryCategory) {
-            filteredData = props.data.filter((shop) => {
+            filteredData = filteredData.filter((shop) => {
               const shopCategories = shop['カテゴリ']
                 ? shop['カテゴリ'].split(/,|、|\s+/).map(cat => cat.trim())
                 : [];
@@ -249,29 +264,40 @@ const Content = (props: Props) => {
           try {
             performance.mark('distance-sort-start');
             const maybeSorted = await sortShopList(filteredData, location);
-            setData(maybeSorted);
-            setList(maybeSorted.slice(0, INITIAL_LOAD_SIZE));
-            setDisplayCount(INITIAL_LOAD_SIZE);
+            if (mountedRef.current) {
+              setData(maybeSorted);
+              setList(maybeSorted.slice(0, INITIAL_LOAD_SIZE));
+              setDisplayCount(INITIAL_LOAD_SIZE);
+            }
             performance.mark('distance-sort-end');
             performance.measure('distance-sort', 'distance-sort-start', 'distance-sort-end');
           } catch (error) {
             console.warn('距離ソートに失敗しました:', error);
+            if (mountedRef.current) {
+              setData(filteredData);
+              setList(filteredData.slice(0, INITIAL_LOAD_SIZE));
+              setDisplayCount(INITIAL_LOAD_SIZE);
+            }
+          }
+        } else {
+          if (mountedRef.current) {
             setData(filteredData);
             setList(filteredData.slice(0, INITIAL_LOAD_SIZE));
             setDisplayCount(INITIAL_LOAD_SIZE);
           }
-        } else {
-          setData(filteredData);
-          setList(filteredData.slice(0, INITIAL_LOAD_SIZE));
-          setDisplayCount(INITIAL_LOAD_SIZE);
         }
       } catch (error) {
         console.error('データ初期化エラー:', error);
-        setData(props.data);
-        setList(props.data.slice(0, INITIAL_LOAD_SIZE));
-        setDisplayCount(INITIAL_LOAD_SIZE);
+        // エラー時にも空配列を設定して、リストがundefinedにならないようにする
+        if (mountedRef.current) {
+          setData([]);
+          setList([]);
+          setDisplayCount(0);
+        }
       } finally {
-        setIsInitializing(false);
+        if (mountedRef.current) {
+          setIsInitializing(false);
+        }
         initializationRef.current = false;
         performance.mark('list-init-end');
         performance.measure('list-init', 'list-init-start', 'list-init-end');
@@ -280,6 +306,20 @@ const Content = (props: Props) => {
     
     initializeData();
   }, [props.data, queryCategory, location]);
+
+  // レンダリング時間計測
+  useEffect(() => {
+    if (!isInitializing) {
+      renderStartTime.current = performance.now();
+      requestAnimationFrame(() => {
+        if (renderStartTime.current) {
+          const renderTime = performance.now() - renderStartTime.current;
+          console.log(`リストレンダリング時間: ${renderTime.toFixed(2)}ms`);
+          renderStartTime.current = null;
+        }
+      });
+    }
+  }, [list, isInitializing]);
 
   const popupHandler = useCallback((shop: Pwamap.ShopData) => {
     if (shop) {
@@ -298,46 +338,27 @@ const Content = (props: Props) => {
 
     setIsLoading(true);
     
-    setTimeout(() => {
+    const t = setTimeout(() => {
       try {
-        const nextCount = displayCount + LOAD_MORE_SIZE;
+        const nextCount = Math.min(displayCount + LOAD_MORE_SIZE, data.length);
         const newItems = data.slice(0, nextCount);
         
-        setList(newItems);
-        setDisplayCount(nextCount);
+        if (mountedRef.current) {
+          setList(newItems);
+          setDisplayCount(nextCount);
+        }
       } catch (error) {
         console.error('追加読み込みエラー:', error);
       } finally {
-        setIsLoading(false);
+        if (mountedRef.current) {
+          setIsLoading(false);
+        }
       }
     }, 100);
+    return () => clearTimeout(t);
   }, [data, displayCount, isLoading]);
 
-  // スクロール監視（自動読み込み）
-  useEffect(() => {
-    const handleScroll = () => {
-      if (isLoading || displayCount >= data.length || isInitializing) {
-        return;
-      }
-
-      const scrollElement = listRef.current;
-      if (!scrollElement) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
-      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-
-      // 80%スクロールしたら自動読み込み
-      if (scrollPercentage > 0.8) {
-        loadMore();
-      }
-    };
-
-    const scrollElement = listRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-      return () => scrollElement.removeEventListener('scroll', handleScroll);
-    }
-  }, [loadMore, isLoading, displayCount, data.length, isInitializing]);
+  // スクロール監視はVirtuosoのendReachedで代替
 
   // スワイプハンドラーの設定
   const swipeHandlers = useSwipeable({
@@ -349,6 +370,26 @@ const Content = (props: Props) => {
     trackMouse: false,
     preventScrollOnSwipe: false,
   });
+
+  // スクロール監視は IntersectionObserver を使用
+
+  useEffect(() => {
+    const root = document.querySelector('.app-body') as HTMLDivElement | null;
+    const sentinel = sentinelRef.current;
+    if (!root || !sentinel) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (isInitializing || isLoading) return;
+      if (displayCount >= data.length) return;
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          loadMore();
+          break;
+        }
+      }
+    }, { root, rootMargin: '120px' });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isInitializing, isLoading, displayCount, data.length, loadMore]);
 
   const skeletonLoader = (
     <div className="skeleton-container">
@@ -362,43 +403,47 @@ const Content = (props: Props) => {
     <div id="shop-list" className="shop-list no-pull-refresh" {...swipeHandlers} ref={listRef}>
       {queryCategory && <div className="shop-list-category">{`カテゴリ：「${queryCategory}」`}</div>}
 
-      <div className="shop-list-content">
-        {isInitializing ? skeletonLoader : 
-          list.map((item) => (
-            <div key={item.index} className="shop">
-              <ShopListItem
-                data={item}
-                popupHandler={popupHandler}
-                queryCategory={queryCategory}
-              />
-            </div>
-          ))
-        }
-        
-        {/* 手動読み込みボタン */}
-        {!isInitializing && displayCount < data.length && (
-          <div className="load-more-container">
-            <button 
-              className="load-more-button"
-              onClick={loadMore}
-              disabled={isLoading}
-            >
-              {isLoading ? '読み込み中...' : `さらに${Math.min(LOAD_MORE_SIZE, data.length - displayCount)}件表示`}
-            </button>
-          </div>
-        )}
-        
-        {/* ゼロ件メッセージ */}
-        {!isInitializing && list.length === 0 && (
-          <div className="end-message">
-            <p>該当する店舗がありません</p>
-          </div>
-        )}
+      <div className="shop-list-content" style={{ height: '100%', overflow: 'visible', paddingTop: '10px' }}>
+        {isInitializing ? skeletonLoader : (
+          <div style={{ paddingBottom: '80px' }} ref={scrollRef}>
+            {list.slice(0, displayCount).map((item, index) => (
+              <ItemBoundary key={`plain-${item.index || index}`} item={item} index={index}>
+                <div className="shop-item-wrapper">
+                  <ShopListItem
+                    data={item as Pwamap.ShopData}
+                    popupHandler={popupHandler}
+                    queryCategory={queryCategory}
+                    safeMode={true}
+                  />
+                </div>
+              </ItemBoundary>
+            ))}
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {/* 手動読み込みボタン（スクロール内） */}
+            {!isInitializing && displayCount < data.length && (
+              <div className="load-more-container">
+                <button 
+                  className="load-more-button"
+                  onClick={loadMore}
+                  disabled={isLoading}
+                >
+                  {isLoading ? '読み込み中...' : `さらに${Math.min(LOAD_MORE_SIZE, data.length - displayCount)}件表示`}
+                </button>
+              </div>
+            )}
+            {/* ゼロ件メッセージ（スクロール内） */}
+            {!isInitializing && list.length === 0 && (
+              <div className="end-message">
+                <p>該当する店舗がありません</p>
+              </div>
+            )}
 
-        {/* 読み込み完了メッセージ */}
-        {!isInitializing && displayCount >= data.length && list.length > 0 && (
-          <div className="end-message">
-            <p>すべての店舗を表示しました（{data.length}件）</p>
+            {/* 読み込み完了メッセージ（スクロール内） */}
+            {!isInitializing && displayCount >= data.length && list.length > 0 && (
+              <div className="end-message">
+                <p>すべての店舗を表示しました（{data.length}件）</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -409,3 +454,24 @@ const Content = (props: Props) => {
 };
 
 export default React.memo(Content);
+class ItemBoundary extends React.Component<{ children: React.ReactNode; item?: Pwamap.ShopData; index?: number }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode; item?: Pwamap.ShopData; index?: number }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any) {
+    try {
+      const it = this.props.item as any;
+      const name = typeof it?.['スポット名'] === 'string' ? it['スポット名'] : '';
+      const cat = typeof it?.['カテゴリ'] === 'string' ? it['カテゴリ'] : '';
+      console.error('List item render error', { index: this.props.index, name, category: cat, error });
+    } catch {}
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children as React.ReactElement;
+  }
+}

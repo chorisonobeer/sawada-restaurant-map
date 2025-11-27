@@ -7,6 +7,7 @@ interface VersionInfo {
   version: string;
   timestamp: number;
   buildDate: string;
+  hash?: string;
   last_updated?: string;
 }
 
@@ -126,18 +127,26 @@ class VersionManager {
       return false;
     }
 
-    return serverVersion.timestamp > this.currentVersion.timestamp;
+    // タイムスタンプが新しい場合は更新
+    if (serverVersion.timestamp > this.currentVersion.timestamp) {
+      return true;
+    }
+    
+    // タイムスタンプが同じ場合、ハッシュ値が異なる場合は更新
+    if (serverVersion.timestamp === this.currentVersion.timestamp && 
+        serverVersion.hash && this.currentVersion.hash && 
+        serverVersion.hash !== this.currentVersion.hash) {
+      return true;
+    }
+    
+    return false;
   }
 
   /**
    * アップデートを処理
    */
   private async handleUpdate(newVersion: VersionInfo): Promise<void> {
-    console.log('🔄 Handling update (non-destructive)...');
-    
-    // 非破壊: キャッシュやローカルデータの削除は行わない
-    // await this.clearAllCaches(); // disabled
-    // this.clearLocalData(); // disabled
+    console.log('🔄 Handling update...');
     
     // Service Workerを更新（skipWaiting/clientsClaimはSW側で対応）
     await this.updateServiceWorker();
@@ -145,12 +154,8 @@ class VersionManager {
     // バージョン情報を保存
     this.saveVersionInfo(newVersion);
     
-    // 強制リロードは行わず、コールバックがあれば通知のみ
-    if (this.forceUpdateCallback) {
-      this.forceUpdateCallback();
-    } else {
-      console.log('✅ Update applied. Waiting for user-initiated reload.');
-    }
+    // 強制リロードを実行してUIを更新
+    this.forceReload();
   }
 
   /**

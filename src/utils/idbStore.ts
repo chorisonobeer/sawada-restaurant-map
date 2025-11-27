@@ -1,4 +1,5 @@
 // IndexedDB-based JSON key-value store with localStorage fallback
+// 各エントリにタイムスタンプを含めて有効期限管理を行う
 
 const DB_NAME = 'app-cache';
 const STORE_NAME = 'data';
@@ -21,21 +22,58 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function getJSON<T>(key: string): Promise<T | null> {
+export async function getJSON<T>(key: string, maxAgeMinutes: number = 0): Promise<T | null> {
   try {
     const db = await openDB();
     return await new Promise<T | null>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(key);
-      req.onsuccess = () => resolve((req.result ?? null) as T | null);
+      req.onsuccess = () => {
+        const result = req.result;
+        if (!result) {
+          resolve(null);
+          return;
+        }
+        
+        // 有効期限チェック
+        if (maxAgeMinutes > 0 && result.timestamp) {
+          const now = Date.now();
+          const ageMinutes = (now - result.timestamp) / (1000 * 60);
+          if (ageMinutes > maxAgeMinutes) {
+            // 有効期限切れの場合は削除してnullを返す
+            const deleteReq = store.delete(key);
+            deleteReq.onsuccess = () => resolve(null);
+            deleteReq.onerror = () => resolve(null); // エラーでもnullを返す
+            return;
+          }
+        }
+        
+        resolve((result.value ?? null) as T | null);
+      };
       req.onerror = () => reject(req.error);
     });
   } catch (e) {
     // Fallback to localStorage
     try {
       const raw = localStorage.getItem(key);
-      return raw ? (JSON.parse(raw) as T) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        
+        // 有効期限チェック
+        if (maxAgeMinutes > 0 && parsed.timestamp) {
+          const now = Date.now();
+          const ageMinutes = (now - parsed.timestamp) / (1000 * 60);
+          if (ageMinutes > maxAgeMinutes) {
+            // 有効期限切れの場合は削除してnullを返す
+            localStorage.removeItem(key);
+            return null;
+          }
+        }
+        
+        return parsed.value ? (parsed.value as T) : null;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -48,14 +86,23 @@ export async function setJSON<T>(key: string, value: T): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      const req = store.put(value as any, key);
+      // タイムスタンプ付きで保存
+      const data = {
+        value: value,
+        timestamp: Date.now()
+      };
+      const req = store.put(data as any, key);
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
   } catch (e) {
     // Fallback to localStorage
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      const data = {
+        value: value,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(key, JSON.stringify(data));
     } catch {
       // ignore
     }
