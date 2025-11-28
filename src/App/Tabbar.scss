@@ -5,60 +5,74 @@
   justify-content: center;
   align-items: center;
   height: 100%;
-  padding-right: 18px;
-  background-color: #f8f8f8; /* 薄い背景色を追加 */
+  padding-right: 0;
+  background-color: #f8f8f8;
 
   ul
   {
     list-style-type: none;
     margin: 0;
     padding: 0;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
     width: 100%;
 
     li
     {
-      width: 25%;
       text-align: center;
       min-height: 80px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      background-color: #f8f8f8; /* 薄い背景色を追加 */
+      box-sizing: border-box;
+      background-color: #f8f8f8;
     }
 
     a
     {
       color: rgb(74, 74, 74);
       text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 80px;
+      gap: 6px;
 
       .icon
       {
         line-height: 1;
-        margin-bottom: 2vw;
       }
+      .icon > svg { width: 22px; height: 22px; }
 
       .text
       {
-        font-size: clamp(10.5px, 2.2vw, 12px);
+        font-size: 12px;
         font-weight: bolder;
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 100%;
       }
       
-      /* アクティブなタブのスタイル */
-      &.active {
-        color: #00A0E6; /* アクティブなタブのテキスト色 */
-        font-weight: bold;
-      }
+      &.home .icon { color: #00A0E6; }
+      &.home .text { color: #00A0E6; }
+      &.list .icon { color: #4FC3F7; }
+      &.list .text { color: #4FC3F7; }
+      &.images .icon { color: #10B981; }
+      &.images .text { color: #10B981; }
+      &.events .icon { color: #F59E0B; }
+      &.events .text { color: #F59E0B; }
+      &.aboutus .icon { color: #8B5CF6; }
+      &.aboutus .text { color: #8B5CF6; }
+
+      &.home.active { color: #00A0E6; font-weight: bold; }
+      &.list.active { color: #4FC3F7; font-weight: bold; }
+      &.images.active { color: #10B981; font-weight: bold; }
+      &.events.active { color: #F59E0B; font-weight: bold; }
+      &.aboutus.active { color: #8B5CF6; font-weight: bold; }
     }
     
-    /* タブ間の区切り線 */
-    li:not(:last-child) {
-      border-right: 1px solid #e0e0e0;
-    }
+    li + li { border-left: 1px solid #e0e0e0; }
   }
 
   @media (min-width: 768px) {
@@ -68,12 +82,8 @@
       }
 
       a {
-        .icon {
-          margin-bottom: 4px;
-        }
-
         .text {
-          font-size: 10px;
+          font-size: 11px;
         }
       }
     }

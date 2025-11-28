@@ -7,8 +7,11 @@ a
 .app-body
 {
   /* フッター(.app-footer)の高さ 60px と一致させる */
-  height: calc(100% - 60px - env(safe-area-inset-bottom));
+  height: calc(100% - 68px - env(safe-area-inset-bottom));
   overflow-y: auto; /* コンテンツがはみ出した場合に縦スクロールを許可 */
+  box-sizing: border-box;
+  padding-bottom: 10px; /* スクロールバー終端がタブに干渉しないよう余白 */
+  scrollbar-gutter: stable; /* スクロールバー分のスペースを確保 */
 }
 // Hack for Edge to eliminate calc(env())
 @supports (-ms-ime-align: auto) {

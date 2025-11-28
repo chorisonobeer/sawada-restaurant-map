@@ -7,7 +7,7 @@
   text-align: left;
   top: 0;
   left: 0;
-  background-color: transparent;
+
   border: none;
   width: 100%;
 
@@ -82,7 +82,7 @@
     padding: 12px 14px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    background: #ffffff;
+    background: #ffffff00;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     // 画像との重複を防ぐためにz-indexを調整
     z-index: 2;
