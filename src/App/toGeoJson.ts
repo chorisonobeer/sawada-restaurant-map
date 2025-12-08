@@ -28,18 +28,29 @@ const toGeoJson = (data: any) => {
     features: []
   } as GeoJSON
 
+  let skipped = 0
+
   for (const id in data) {
     const item = data[id] as itemObject
 
+    // 必須項目の欠損や数値変換不可の場合はスキップして処理を続行
     if (!item['経度'] || !item['緯度'] || !item['スポット名']) {
-      return;
+      skipped++
+      continue
+    }
+
+    const lngNum = Number(item['経度'])
+    const latNum = Number(item['緯度'])
+    if (!Number.isFinite(lngNum) || !Number.isFinite(latNum)) {
+      skipped++
+      continue
     }
 
     const feature = {
       type: "Feature",
       geometry: {
         type: "Point",
-        coordinates: [Number(item['経度']), Number(item['緯度'])]
+        coordinates: [lngNum, latNum]
       },
       properties: {_id: id}
     } as Feature
@@ -50,6 +61,11 @@ const toGeoJson = (data: any) => {
     }
 
     geojson.features.push(feature)
+  }
+
+  // 1件も有効データがない場合でも空のGeoJSONを返す
+  if (skipped > 0) {
+    console.warn(`toGeoJson: skipped ${skipped} invalid item(s)`)
   }
 
   return geojson

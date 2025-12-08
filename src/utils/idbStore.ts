@@ -25,7 +25,7 @@ function openDB(): Promise<IDBDatabase> {
 export async function getJSON<T>(key: string, maxAgeMinutes: number = 0): Promise<T | null> {
   try {
     const db = await openDB();
-    return await new Promise<T | null>((resolve, reject) => {
+    return await new Promise<T | null>((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(key);
@@ -41,17 +41,26 @@ export async function getJSON<T>(key: string, maxAgeMinutes: number = 0): Promis
           const now = Date.now();
           const ageMinutes = (now - result.timestamp) / (1000 * 60);
           if (ageMinutes > maxAgeMinutes) {
-            // 有効期限切れの場合は削除してnullを返す
-            const deleteReq = store.delete(key);
-            deleteReq.onsuccess = () => resolve(null);
-            deleteReq.onerror = () => resolve(null); // エラーでもnullを返す
+            // 有効期限切れの場合はキャッシュを無効とみなし、削除はベストエフォートで別Txにする
+            // （read-onlyトランザクションでdeleteするとReadOnlyErrorになるため）
+            try {
+              const cleanTx = db.transaction(STORE_NAME, 'readwrite');
+              const cleanStore = cleanTx.objectStore(STORE_NAME);
+              cleanStore.delete(key);
+            } catch {
+              // 削除に失敗しても無視し、nullを返す
+            }
+            resolve(null);
             return;
           }
         }
         
         resolve((result.value ?? null) as T | null);
       };
-      req.onerror = () => reject(req.error);
+      req.onerror = () => {
+        // 読み取り失敗時はキャッシュなし扱いにし、後段がネットワークへ進めるようnullで返す
+        resolve(null);
+      };
     });
   } catch (e) {
     // Fallback to localStorage
@@ -65,8 +74,12 @@ export async function getJSON<T>(key: string, maxAgeMinutes: number = 0): Promis
           const now = Date.now();
           const ageMinutes = (now - parsed.timestamp) / (1000 * 60);
           if (ageMinutes > maxAgeMinutes) {
-            // 有効期限切れの場合は削除してnullを返す
-            localStorage.removeItem(key);
+            // 有効期限切れの場合は削除してnullを返す（ベストエフォート）
+            try {
+              localStorage.removeItem(key);
+            } catch {
+              // ignore
+            }
             return null;
           }
         }

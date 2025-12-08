@@ -1,0 +1,171 @@
+// Design tokens (responsive-friendly)
+
+// ============================================
+// Color Palette
+// ============================================
+$colors: (
+  primary: #007AFF,
+  text-primary: #1C1C1E,
+  text-secondary: #8E8E93,
+  text-disabled: #C7C7CC,
+  background: #FFFFFF,
+  background-secondary: #F5F5F7,
+  background-tertiary: #F8F8F8,
+  border: rgba(0, 0, 0, 0.1),
+  border-light: rgba(0, 0, 0, 0.05),
+  border-medium: rgba(0, 0, 0, 0.15),
+  shadow: rgba(0, 0, 0, 0.08),
+  shadow-medium: rgba(0, 0, 0, 0.12),
+  shadow-heavy: rgba(0, 0, 0, 0.16),
+  status-open: #4CAF50,
+  status-closed: #B0BEC5,
+  status-unknown: #FFC107
+);
+
+// ============================================
+// Spacing (rem units)
+// ============================================
+$spacing: (
+  xs: 0.25rem,
+  sm: 0.5rem,
+  md: 1rem,
+  lg: 1.5rem,
+  xl: 2rem,
+  xxl: 3rem
+);
+
+// ============================================
+// Layout sizes (reflecting structural dependencies)
+// ============================================
+$layout: (
+  footer-height: 3.75rem, // 60px
+  footer-height-with-safe: calc(3.75rem + env(safe-area-inset-bottom)),
+  search-top-offset: 0.625rem, // 10px
+  search-left-offset: 0.625rem, // 10px
+  search-input-height: 2rem, // 32px
+  search-filter-gap: 0.625rem, // 10px
+  search-filter-row-height: 2.5rem, // 40px (estimated base)
+  tabbar-height-mobile: 5rem, // 80px
+  tabbar-height-desktop: 4.375rem, // 70px
+  shop-action-buttons-height: 12.5rem, // 200px
+  shop-head-height: 2.75rem // 44px
+);
+
+// ============================================
+// Border radius (rem units)
+// ============================================
+$border-radius: (
+  xs: 0.25rem,
+  sm: 0.5rem,
+  md: 0.75rem,
+  lg: 1rem,
+  xl: 1.25rem,
+  pill: 1.25rem
+);
+
+@function border-radius-responsive($base) {
+  @return clamp($base * 0.75, $base * 1vw, $base);
+}
+
+// ============================================
+// Shadows
+// ============================================
+$shadow: (
+  sm: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.08),
+  md: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.08),
+  lg: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12),
+  xl: 0 0.75rem 2rem rgba(0, 0, 0, 0.16)
+);
+
+// ============================================
+// z-index scale
+// ============================================
+$z-index: (
+  base: 0,
+  app: 2,
+  map: 5,
+  search: 6,
+  shop-actions: 20,
+  shop-modal: 50,
+  footer: 100,
+  search-results-panel: 999,
+  dropdown: 1000,
+  modal: 1000,
+  toast: 9999
+);
+
+// ============================================
+// Typography
+// ============================================
+$font-size: (
+  xs: 0.6875rem,
+  sm: 0.75rem,
+  md: 0.875rem,
+  base: 1rem,
+  lg: 1.125rem,
+  xl: 1.25rem,
+  xxl: 1.5rem
+);
+
+$font-weight: (
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700
+);
+
+$line-height: (
+  tight: 1.2,
+  normal: 1.5,
+  relaxed: 1.75
+);
+
+// ============================================
+// Breakpoints
+// ============================================
+$breakpoints: (
+  mobile: 480px,
+  tablet: 768px,
+  desktop: 960px,
+  large-desktop: 1200px
+);
+
+// ============================================
+// Helper functions
+// ============================================
+@function color($key) {
+  @return map-get($colors, $key);
+}
+
+@function spacing($key) {
+  @return map-get($spacing, $key);
+}
+
+@function layout($key) {
+  @return map-get($layout, $key);
+}
+
+@function border-radius($key) {
+  @return map-get($border-radius, $key);
+}
+
+@function shadow($key) {
+  @return map-get($shadow, $key);
+}
+
+@function z-index($key) {
+  @return map-get($z-index, $key);
+}
+
+@function font-size($key) {
+  @return map-get($font-size, $key);
+}
+
+@function font-weight($key) {
+  @return map-get($font-weight, $key);
+}
+
+@function line-height($key) {
+  @return map-get($line-height, $key);
+}
+
