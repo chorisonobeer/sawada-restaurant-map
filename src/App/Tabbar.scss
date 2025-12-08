@@ -63,7 +63,8 @@
       }
     }
     
-    li + li { border-left: 1px solid color(border-light); }
+    // 縦線を削除（UI改善）
+    // li + li { border-left: 1px solid color(border-light); }
   }
 
   @media (min-width: 768px) {
