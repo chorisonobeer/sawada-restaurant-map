@@ -576,13 +576,12 @@ $breakpoints: (
 
 ### 人間工学的な改善
 
-#### 1. 操作系のボトム配置
-- **対象ファイル**: `src/App/SearchFeature.tsx`, `src/App/SearchFeature.scss`
-- **修正内容**:
-  - 検索バーを画面下部（ボトムナビの上）に移動
-  - `position: fixed; bottom: 70px;` に変更
-  - フローティングカードスタイルを維持
-- **改善効果**: 片手操作が容易になり、大型スマホでも使いやすくなる
+#### 1. ~~操作系のボトム配置~~（削除: Geoloniaの著作権表示と干渉）
+- **削除理由**:
+  - Geoloniaの著作権表示が`bottom: calc(60px + env(safe-area-inset-bottom) + 10px)`に配置されている
+  - 検索窓を下側に移動すると、確実に干渉する
+  - 著作権表示は法的に必須のため、移動できない
+- **代替案**: 現在の上部配置を維持し、スタイルのみを改善
 
 #### 2. タッチターゲットの拡大
 - **対象ファイル**: `src/App/Map.scss`
@@ -618,19 +617,8 @@ $breakpoints: (
 
 ### 没入感とエモーショナルデザイン
 
-#### 1. グラスモーフィズムの全面導入
-- **対象ファイル**: 
-  - `src/App/SearchFeature.scss`
-  - `src/App/Tabbar.scss`
-  - `src/App/Shop.scss`
-- **修正内容**:
-  ```scss
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  ```
-- **改善効果**: 地図が透けて見え、没入感が向上
+#### 1. ~~グラスモーフィズムの全面導入~~（削除: 実装困難のため）
+- **削除理由**: `backdrop-filter`のブラウザサポートとパフォーマンスの問題により、実装を見送り
 
 #### 2. リッチなマーカーデザイン
 - **対象ファイル**: `src/App/Map.tsx`
@@ -705,13 +693,12 @@ $breakpoints: (
 
 #### フェーズ3: 長期的な改善（1-2週間）
 
-**5. 検索バーのボトム配置**
-- **対象ファイル**: `src/App/SearchFeature.tsx`, `src/App/SearchFeature.scss`, `src/App/Home.tsx`
-- **修正内容**: 
-  - レイアウト構造の変更
-  - 地図との干渉を考慮した調整
-- **工数**: 2-3日
-- **改善効果**: 大（ユーザビリティの向上）
+**5. ~~検索バーのボトム配置~~（削除: Geoloniaの著作権表示と干渉）**
+- **削除理由**: 
+  - Geoloniaの著作権表示が`bottom: calc(60px + env(safe-area-inset-bottom) + 10px)`に配置されている
+  - 検索窓を下側に移動すると、確実に干渉する
+  - 著作権表示は法的に必須のため、移動できない
+- **代替案**: 現在の上部配置を維持し、スタイルのみを改善
 
 **6. デザインシステムの構築**
 - **新規ファイル**: `src/styles/design-tokens.scss`
@@ -787,37 +774,57 @@ $breakpoints: (
 
 #### 🟡 Phase 2: 中期的な改善（2-3週間）
 
-5. **フィルタのチップ化**
-   - ファイル: `src/App/SearchFeature.tsx`, `src/App/SearchFeature.scss`
-   - 変更箇所: JSX構造、スタイル
-   - 効果: 高、工数: 中
+**⚠️ 重要: 実装プランの再検討結果**
 
-6. **グラスモーフィズムの導入**
-   - ファイル: `src/App/SearchFeature.scss`, `src/App/Tabbar.scss`
-   - 変更箇所: `backdrop-filter`
-   - 効果: 中、工数: 中
+以下の改善案は、実際のUI構造を確認した結果、**実装を見送る**または**再検討が必要**と判断しました：
 
-7. **マイクロインタラクションの追加**
+1. ~~**フィルタのチップ化**~~（削除: メリットが限定的）
+   - **削除理由**: 
+     - 現在のUIは2段構成（ドロップダウン + ボタン）で、情報が整理されている
+     - チップ化しても、実際のUX改善効果は限定的
+     - 横スクロールが必要になることで、むしろ操作性が低下する可能性がある
+   - **代替案**: 現在のUI構造を維持し、スタイルのみを改善（色・角丸・シャドウ）
+
+2. ~~**検索バーのボトム配置**~~（削除: Geoloniaの著作権表示と干渉）
+   - **削除理由**: 
+     - Geoloniaの著作権表示が`bottom: calc(60px + env(safe-area-inset-bottom) + 10px)`に配置されている
+     - 検索窓を下側に移動すると、確実に干渉する
+     - 著作権表示は法的に必須のため、移動できない
+   - **代替案**: 現在の上部配置を維持し、スタイルのみを改善
+
+**推奨される改善案（Phase 2）**:
+
+5. **マイクロインタラクションの追加**（優先度: 中）
    - ファイル: `src/App/Tabbar.tsx`, `src/App/SearchFeature.tsx`
    - 変更箇所: アニメーション、イベントハンドラー
    - 効果: 中、工数: 中
+   - **具体的な改善内容**:
+     - タブバーのタップ時のフィードバック（軽いアニメーション）
+     - 検索結果の表示/非表示のトランジション
+     - ボタン押下時の視覚的フィードバック
+
+6. **フィルタUIのスタイル改善**（優先度: 中）
+   - ファイル: `src/App/SearchFeature.scss`
+   - 変更箇所: スタイルのみ（構造は変更しない）
+   - 効果: 中、工数: 低
+   - **具体的な改善内容**:
+     - ドロップダウンの角丸・シャドウの統一
+     - ボタンのホバー効果の追加
+     - アクティブ状態の視覚的改善
 
 #### 🟢 Phase 3: 長期的な改善（1-2ヶ月）
 
-8. **検索バーのボトム配置**
-   - ファイル: 複数ファイル
-   - 変更箇所: レイアウト構造
-   - 効果: 高、工数: 高
+7. **マーカーの視覚改善**（優先度: 中）
+   - ファイル: `src/App/Map.tsx`
+   - 変更箇所: マーカーデザイン
+   - 効果: 中、工数: 高
+   - **注意**: パフォーマンスへの影響を考慮して慎重に実装
 
-9. **デザインシステムの構築**
-   - 新規ファイル: `src/styles/design-tokens.scss`
-   - 変更箇所: 全SCSSファイル
-   - 効果: 高、工数: 高
-
-10. **マーカーの視覚改善**
-    - ファイル: `src/App/Map.tsx`
-    - 変更箇所: マーカーデザイン
-    - 効果: 中、工数: 高
+8. **デザインシステムの拡充**（優先度: 低）
+   - 新規ファイル: `src/styles/design-tokens.scss`（既に作成済み）
+   - 変更箇所: 全SCSSファイルへの適用
+   - 効果: 高（長期的）、工数: 高
+   - **注意**: Phase1で既に導入済みのため、段階的に拡充
 
 ---
 
@@ -849,25 +856,14 @@ $breakpoints: (
   left: clamp(0.5rem, 1.5vw, 0.625rem);
   // 幅の計算式を改善: calc(85% - 0px) → calc(100% - 1.25rem)
   width: calc(100% - clamp(1rem, 3vw, 1.25rem)); // 左右の余白を明確化
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: color(background);
+  border: 1px solid color(border-light);
   border-radius: clamp(0.5rem, 1.5vw, 0.75rem); // 12px相当、レスポンシブ対応
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  
-  // フォールバック（backdrop-filter非対応ブラウザ）
-  @supports not (backdrop-filter: blur(20px)) {
-    background: rgba(255, 255, 255, 0.95);
-  }
-  
-  // パフォーマンス最適化
-  will-change: transform;
+  box-shadow: shadow(sm);
 }
 ```
 
 **改善効果**: 
-- 地図が透けて見え、没入感が向上
 - モダンで洗練された印象
 - 視覚的な階層が明確になる
 - **レスポンシブ対応**: 様々な画面サイズで適切に表示される
@@ -956,81 +952,29 @@ $breakpoints: (
 
 ---
 
-### 3. フィルタのチップ化
+### 3. ~~フィルタのチップ化~~（削除: メリットが限定的）
 
-**ファイル**: `src/App/SearchFeature.tsx`, `src/App/SearchFeature.scss`
+**削除理由**:
+1. **現在のUI構造の評価**:
+   - 現在のUIは2段構成（ドロップダウン + ボタン）で、情報が整理されている
+   - カテゴリとタグはドロップダウンで選択（多数の選択肢がある場合に有効）
+   - 「現在営業中」「駐車場有り」は2つのボタンのみで、シンプルで分かりやすい
 
-**TSXの変更**:
-- ドロップダウンを横スクロール可能なチップリストに変更
-- 各フィルタを独立したチップボタンとして表示
-- カテゴリとタグを横スクロール可能なチップリストに統合
+2. **チップ化のデメリット**:
+   - 横スクロールが必要になることで、むしろ操作性が低下する可能性がある
+   - 多数の選択肢を横に並べると、画面が狭くなる
+   - 現在のUI構造を大きく変更する必要があり、リスクが高い
 
-**SCSSの変更**:
-```scss
-// デザイントークンをインポート
-@import '../styles/design-tokens.scss';
+3. **代替案**:
+   - 現在のUI構造を維持し、スタイルのみを改善（色・角丸・シャドウ）
+   - ドロップダウンの開閉アニメーションを追加
+   - ボタンのホバー効果を追加
 
-.filter-container {
-  // 変更前
-  position: absolute;
-  top: 52px; // 固定値、検索バーの高さに依存
-  left: 10px; // 固定値
-  width: calc(85% - 0px); // 不自然な計算式
-  display: flex;
-  flex-direction: column;
-  gap: 4px; // 固定値
-  
-  // 変更後
-  position: absolute;
-  // レスポンシブ対応: デザイントークンを使用
-  top: calc($search-top-offset + $search-input-height + $search-filter-gap);
-  // top: calc(0.625rem + 2rem + 0.625rem); // 10px + 32px + 10px
-  left: clamp(0.5rem, 1.5vw, 0.625rem); // 10px相当、レスポンシブ対応
-  width: calc(100% - clamp(1rem, 3vw, 1.25rem)); // 左右の余白を明確化
-  display: flex;
-  flex-direction: row; // 縦から横に変更
-  overflow-x: auto; // 横スクロール対応
-  gap: $spacing-sm; // デザイントークンを使用 (0.5rem = 8px)
-  padding: $spacing-sm 0; // デザイントークンを使用
-  
-  // スクロールバーのスタイル
-  &::-webkit-scrollbar {
-    height: 0.25rem; // 4px
-  }
-  
-  .filter-chip {
-    flex: 0 0 auto; // 縮小しない
-    padding: $spacing-sm $spacing-md; // 0.5rem 1rem (8px 16px)
-    border-radius: $border-radius-pill; // 1.25rem (20px)
-    background: #F5F5F7;
-    border: none;
-    white-space: nowrap;
-    // レスポンシブ対応
-    font-size: clamp(0.75rem, 2vw, 0.875rem); // 12px-14px
-    // タッチターゲットの最小サイズを確保
-    min-height: 2.75rem; // 44px (アクセシビリティ基準)
-    
-    &.active {
-      background: #1C1C1E;
-      color: #FFFFFF;
-    }
-    
-    // ホバー効果
-    &:hover {
-      opacity: 0.8;
-      transition: opacity 0.2s ease;
-    }
-  }
-}
-```
-
-**改善効果**: 
-- 情報の優先順位が明確になる
-- 認知負荷が軽減される
-- モバイルでの操作性が向上
-- **レスポンシブ対応**: 様々な画面サイズで適切に表示される
-- **アクセシビリティ向上**: タッチターゲットの最小サイズを確保
-- **メンテナンス性向上**: デザイントークンを使用して値を一元管理
+**推奨される改善内容**:
+- ドロップダウンの角丸・シャドウの統一
+- ボタンのホバー効果の追加
+- アクティブ状態の視覚的改善
+- デザイントークンの適用（色・角丸・シャドウ）
 
 ---
 
@@ -1461,19 +1405,17 @@ h1, h2, h3 {
 **実装手順**:
 1. デザイントークンをインポート: `@import '../styles/design-tokens.scss';`
 2. `.search-input-container` のスタイルを変更
-   - 背景を半透明に変更
-   - `backdrop-filter` を追加
-   - 角丸を `border-radius-md` に変更
-   - シャドウを `shadow-md` に変更
-   - **重要**: `top` と `left` を `clamp(0.5rem, 1.5vw, 0.625rem)` に変更
-   - **重要**: `width` を `calc(100% - clamp(1rem, 3vw, 1.25rem))` に変更
-3. フォールバックを追加（`@supports` クエリ）
+   - 背景色を `color(background)` に変更
+   - ボーダーを `color(border-light)` に変更
+   - 角丸を `border-radius(md)` に変更
+   - シャドウを `shadow(sm)` に変更
+   - **重要**: `top` と `left` を `clamp(0.5rem, 1.5vw, 0.625rem)` に変更（既に実装済み）
+   - **重要**: `width` を `calc(100% - clamp(1rem, 3vw, 1.25rem))` に変更（既に実装済み）
 
 **確認事項**:
 - [ ] 検索バーが正しい位置に表示される
-- [ ] 地図が透けて見える（グラスモーフィズム効果）
 - [ ] 様々な画面サイズで適切に表示される
-- [ ] フォールバックが機能する
+- [ ] デザイントークンが正しく適用されている
 
 ---
 

@@ -36,6 +36,10 @@ const CSS: React.CSSProperties = {
   width: '100%',
   height: '100%',
   position: 'relative',
+  // 地図の彩度を控えめに調整（自然な印象を保ちつつ、UIを際立たせる）
+  filter: 'saturate(0.92) brightness(0.976)',
+  // GPU加速を明示的に有効化（パフォーマンス最適化）
+  transform: 'translateZ(0)',
 };
 
 
@@ -261,6 +265,13 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
     const onMapLoad = () => {
       hidePoiLayers(map);
       setMapObject(map);
+      
+      // 地図読み込み後にfilterを確実に適用（親要素に直接適用）
+      if (mapNode.current) {
+        mapNode.current.style.filter = 'saturate(0.85) brightness(1.02)';
+        mapNode.current.style.transform = 'translateZ(0)';
+      }
+      
       try {
         const geolocateControl = new geolonia.GeolocateControl({
           positionOptions: {
@@ -309,6 +320,79 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
       window.removeEventListener('map:recenter', handler);
     };
   }, []);
+
+  // attribution control（著作権表示）の位置を動的に調整
+  // シンプルに親要素のbottomを調整するだけ
+  useEffect(() => {
+    if (!mapObject || !mapNode.current) return;
+    
+    const adjustAttributionPosition = () => {
+      // Y方向の上移動を0にする（位置調整を無効化）
+      const bottomValue = 0;
+      
+      // 親要素のbottomを調整
+      const parentSelectors = [
+        '.maplibregl-ctrl-bottom-left',
+        '.maplibregl-ctrl-bottom-right'
+      ];
+      
+      parentSelectors.forEach(parentSelector => {
+        const parentElement = mapNode.current?.querySelector(parentSelector) as HTMLElement;
+        if (parentElement) {
+          parentElement.style.setProperty('bottom', `${bottomValue}px`, 'important');
+          parentElement.style.setProperty('z-index', '50', 'important');
+        }
+      });
+      
+      // attribution control自体のmarginを調整（重要！）
+      // marginが位置に影響しているため、margin-bottomを調整する
+      const attributionSelectors = [
+        '.maplibregl-ctrl-attrib.maplibregl-compact',
+        'details.maplibregl-ctrl-attrib.maplibregl-compact'
+      ];
+      
+      attributionSelectors.forEach(selector => {
+        const element = mapNode.current?.querySelector(selector) as HTMLElement;
+        if (element) {
+          // marginを0にして、親要素のbottom調整が効くようにする
+          element.style.setProperty('margin', '0', 'important');
+          element.style.setProperty('margin-bottom', '0', 'important');
+        }
+      });
+    };
+    
+    // マップ読み込み後に実行
+    const onMapLoadHandler = () => {
+      setTimeout(adjustAttributionPosition, 200);
+    };
+    
+    mapObject.on('load', onMapLoadHandler);
+    
+    // 即座に実行（既に読み込み済みの場合）
+    setTimeout(adjustAttributionPosition, 300);
+    
+    // MutationObserverで親要素の追加を監視
+    const observer = new MutationObserver(() => {
+      setTimeout(adjustAttributionPosition, 100);
+    });
+    
+    observer.observe(mapNode.current, {
+      childList: true,
+      subtree: true
+    });
+    
+    // リサイズ時にも再調整
+    const resizeHandler = () => {
+      setTimeout(adjustAttributionPosition, 100);
+    };
+    window.addEventListener('resize', resizeHandler);
+    
+    return () => {
+      mapObject.off('load', onMapLoadHandler);
+      observer.disconnect();
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, [mapObject]);
 
   return (
     <div style={CSS}>

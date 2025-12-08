@@ -46,25 +46,37 @@ const transformImageUrl = (url?: string): string | undefined => {
   return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w640`;
 };
 
+// 画像URLから一意なキーを生成する関数
+const generateImageKey = (shopIndex: number, imageKey: string, imageUrl: string): string => {
+  // URLのハッシュを計算（簡易版）
+  const urlHash = imageUrl.split('').reduce((acc, char) => {
+    return ((acc << 5) - acc) + char.charCodeAt(0);
+  }, 0);
+  return `img-${shopIndex}-${imageKey}-${Math.abs(urlHash)}`;
+};
+
 // 画像コンポーネント（メモ化）
 const ImageItem = React.memo(({ 
   shop, 
-  key, 
+  imageUrl,
+  imageKey,
+  itemKey,
   idx,
   onClick
 }: { 
   shop: Pwamap.ShopData; 
-  key: string; 
+  imageUrl: string;
+  imageKey: string;
+  itemKey: string;
   idx: number;
   onClick: (shop: Pwamap.ShopData) => void;
 }) => {
-  const raw = (shop['画像'] || '').toString().trim();
-  const transformedUrl = transformImageUrl(raw);
-  const src = transformedUrl || (raw.startsWith('http') || raw.startsWith('/')) ? raw : `/${raw}`;
+  const transformedUrl = transformImageUrl(imageUrl);
+  const src = transformedUrl || (imageUrl.startsWith('http') || imageUrl.startsWith('/')) ? imageUrl : `/${imageUrl}`;
   
   return (
     <ImageListItem
-      key={key}
+      key={itemKey}
       className="mui-image-list-item"
     >
       <img
@@ -101,9 +113,10 @@ const Content = (props: Props) => {
     setShop(undefined)
   }, [])
 
-  // 画像リストをメモ化
+  // 画像リストをメモ化（重複排除対応）
   const imageList = useMemo(() => {
     const items: JSX.Element[] = [];
+    const seenUrls = new Set<string>(); // 重複チェック用
     const imageKeys = ['画像', '画像2', '画像3', '画像4', '画像5'];
 
     for (let i = 0; i < data.length; i++) {
@@ -113,10 +126,25 @@ const Content = (props: Props) => {
         const raw = (shop[key] || '').toString().trim();
         if (!raw) return;
         
+        // 画像URLを正規化（プロキシ化前のURLで比較）
+        const normalizedUrl = raw;
+        
+        // 重複チェック: 既に表示済みの画像URLはスキップ
+        if (seenUrls.has(normalizedUrl)) {
+          return;
+        }
+        seenUrls.add(normalizedUrl);
+        
+        // 一意なキーを生成（URLを含める）
+        const itemKey = generateImageKey(i, key, normalizedUrl);
+        
         items.push(
           <ImageItem 
-            key={`${i}-${key}`} 
+            key={itemKey}
             shop={shop} 
+            imageUrl={raw}
+            imageKey={key}
+            itemKey={itemKey}
             idx={idx}
             onClick={popupHandler}
           />

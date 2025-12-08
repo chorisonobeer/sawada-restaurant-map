@@ -53,7 +53,7 @@ const App: React.FC = React.memo(() => {
           top: 0,
           left: 0,
           width: '100%',
-          height: 'calc(100% - 50px)',
+          height: 'calc(100% - 70px - env(safe-area-inset-bottom))',
           zIndex: isHomePage ? 5 : -1,
           pointerEvents: isHomePage ? 'auto' : 'none'
         }}

@@ -19,4 +19,65 @@
 .search-open .maplibregl-ctrl-zoom-out {
   display: none !important;
 }
+
+/* Geolonia/Mapbox GL JS のattribution control（著作権表示）の位置調整 */
+/* タブバーの高さ（60px + env(safe-area-inset-bottom)）を考慮して上に移動 */
+.mapboxgl-ctrl-attrib,
+.geolonia-ctrl-attrib {
+  bottom: calc(60px + env(safe-area-inset-bottom) + 10px) !important;
+  z-index: 50 !important;
+  /* タブバーより前面に表示（ただしタブバーのz-index: 100より低く） */
+}
+
+/* 情報アイコン（iボタン）の位置も調整 */
+.mapboxgl-ctrl-attrib-button,
+.geolonia-ctrl-attrib-button {
+  bottom: calc(60px + env(safe-area-inset-bottom) + 10px) !important;
+  z-index: 50 !important;
+}
+
+/* MapLibre GL JS のattribution control（著作権表示）の位置調整 */
+/* タブバーの高さ（60px + env(safe-area-inset-bottom)）を考慮して上に移動 */
+
+/* 重要：.maplibregl-ctrl-attrib.maplibregl-compact は position: relative が設定されているため、
+   より詳細度の高いセレクタで position: absolute を上書きする必要がある */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  position: absolute !important;  /* position: relative を上書き */
+  bottom: calc(60px + env(safe-area-inset-bottom) + 10px) !important;
+  right: 0 !important;  /* 右端に配置 */
+  z-index: 50 !important;
+  margin: 0 !important;  /* デフォルトの margin: 10px 10px 10px auto を上書き */
+  /* タブバーより前面に表示（ただしタブバーのz-index: 100より低く） */
+}
+
+/* より詳細なセレクタ（念のため） */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-map details.maplibregl-ctrl-attrib.maplibregl-compact {
+  position: absolute !important;
+  bottom: calc(60px + env(safe-area-inset-bottom) + 10px) !important;
+  right: 0 !important;
+  z-index: 50 !important;
+  margin: 0 !important;
+}
+
+/* 通常の .maplibregl-ctrl-attrib も念のため対応 */
+.maplibregl-ctrl-attrib {
+  position: absolute !important;
+  bottom: calc(60px + env(safe-area-inset-bottom) + 10px) !important;
+  right: 0 !important;
+  z-index: 50 !important;
+}
+
+/* ============================================
+   地図のスタイリング（控えめな調整）
+   ============================================ */
+/* MapLibre GL JS と Mapbox GL JS の両方に対応 */
+/* より控えめな効果：彩度を85%に（自然な印象を保ちつつ、UIを際立たせる） */
+.maplibregl-map,
+.mapboxgl-map {
+  filter: saturate(0.1) brightness(1.02);
+  
+  /* GPU加速を明示的に有効化（パフォーマンス最適化） */
+  transform: translateZ(0);
+}
   
