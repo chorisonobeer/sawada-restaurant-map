@@ -67,7 +67,18 @@ class UpdateNotifier {
 
     // トースト表示を実行
     if (typeof (window as any).__showUpdateToast === 'function') {
-      (window as any).__showUpdateToast();
+      console.log('📢 Showing update notification toast');
+      try {
+        (window as any).__showUpdateToast();
+        this.setLastNotifiedTimestamp(serverTs);
+      } catch (error) {
+        console.error('❌ Error showing update toast:', error);
+        // エラーが発生してもタイムスタンプは更新（重複通知を防ぐため）
+        this.setLastNotifiedTimestamp(serverTs);
+      }
+    } else {
+      console.warn('⚠️ __showUpdateToast function not available, update notification cannot be shown');
+      // 関数が利用できない場合でもタイムスタンプは更新（次回の通知を防ぐため）
       this.setLastNotifiedTimestamp(serverTs);
     }
   }

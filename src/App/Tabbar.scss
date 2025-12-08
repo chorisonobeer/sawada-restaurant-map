@@ -1,3 +1,5 @@
+@import '../styles/design-tokens.scss';
+
 .tabbar
 {
   display: flex;
@@ -6,7 +8,8 @@
   align-items: center;
   height: 100%;
   padding-right: 0;
-  background-color: #f8f8f8;
+  background-color: color(background);
+  box-shadow: 0 -0.25rem 0.75rem color(shadow);
 
   ul
   {
@@ -22,12 +25,12 @@
       text-align: center;
       min-height: 80px;
       box-sizing: border-box;
-      background-color: #f8f8f8;
+      background-color: color(background);
     }
 
     a
     {
-      color: rgb(74, 74, 74);
+      color: color(text-secondary);
       text-decoration: none;
       display: flex;
       flex-direction: column;
@@ -45,8 +48,8 @@
 
       .text
       {
-        font-size: 12px;
-        font-weight: bolder;
+        font-size: font-size(sm);
+        font-weight: font-weight(bold);
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
@@ -54,25 +57,14 @@
         max-width: 100%;
       }
       
-      &.home .icon { color: #00A0E6; }
-      &.home .text { color: #00A0E6; }
-      &.list .icon { color: #4FC3F7; }
-      &.list .text { color: #4FC3F7; }
-      &.images .icon { color: #10B981; }
-      &.images .text { color: #10B981; }
-      &.events .icon { color: #F59E0B; }
-      &.events .text { color: #F59E0B; }
-      &.aboutus .icon { color: #8B5CF6; }
-      &.aboutus .text { color: #8B5CF6; }
-
-      &.home.active { color: #00A0E6; font-weight: bold; }
-      &.list.active { color: #4FC3F7; font-weight: bold; }
-      &.images.active { color: #10B981; font-weight: bold; }
-      &.events.active { color: #F59E0B; font-weight: bold; }
-      &.aboutus.active { color: #8B5CF6; font-weight: bold; }
+      &.active {
+        color: color(primary);
+        font-weight: font-weight(bold);
+      }
     }
     
-    li + li { border-left: 1px solid #e0e0e0; }
+    // 縦線を削除（UI改善）
+    // li + li { border-left: 1px solid color(border-light); }
   }
 
   @media (min-width: 768px) {

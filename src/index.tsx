@@ -244,11 +244,24 @@ function showUpdateToast() {
     setTimeout(() => ripple.remove(), 400);
   };
 
-  btnUpdate.addEventListener('click', (e) => {
+  btnUpdate.addEventListener('click', async (e) => {
     addRipple(e, btnUpdate);
     try {
       (window as any).__pendingReload = true;
-      window.location.reload();
+      
+      // Service Workerの更新を適用（SKIP_WAITINGを送信）
+      await versionManager.applyUpdate();
+      
+      // 少し待ってからリロード（Service Workerが有効化される時間を確保）
+      setTimeout(() => {
+        versionManager.reload();
+      }, 300);
+    } catch (error) {
+      console.error('❌ Error applying update:', error);
+      // エラーが発生した場合でもリロードを試みる
+      setTimeout(() => {
+        versionManager.reload();
+      }, 300);
     } finally {
       toast.classList.add('hide');
       setTimeout(() => toast.remove(), 200);
