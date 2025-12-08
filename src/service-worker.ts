@@ -8,7 +8,7 @@
 // You can also remove this file if you'd prefer not to use a
 // service worker, and the Workbox build step will be skipped.
 
-import { clientsClaim, skipWaiting } from 'workbox-core';
+// clientsClaim と skipWaiting は、ユーザー承認時にのみ実行するため、ここではインポートしない
 import { ExpirationPlugin } from 'workbox-expiration';
 import { precacheAndRoute, createHandlerBoundToURL, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
@@ -16,9 +16,8 @@ import { StaleWhileRevalidate, NetworkFirst, CacheFirst } from 'workbox-strategi
 
 declare const self: ServiceWorkerGlobalScope;
 
-// 即座にクライアントを制御し、古いService Workerをスキップ
-clientsClaim();
-skipWaiting();
+// 注意: skipWaiting()とclientsClaim()は、ユーザーが更新を承認した時のみ実行される
+// （messageイベントでSKIP_WAITINGメッセージを受け取った時）
 
 // 古いキャッシュを自動的にクリーンアップ
 cleanupOutdatedCaches();
@@ -177,25 +176,32 @@ registerRoute(
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('🔄 SKIP_WAITING message received, updating Service Worker');
+    // ユーザーが更新を承認した時のみ、即座に有効化
     self.skipWaiting();
+    // クライアントを即座に制御
+    self.clients.claim();
   }
 });
 
 // Service Worker のインストール時
 self.addEventListener('install', (event) => {
   console.log('🔧 Service Worker installing...');
-  // 即座に有効化
-  self.skipWaiting();
+  // ユーザー承認を待つため、skipWaiting()は呼ばない
+  // インストールを完了させる（waiting状態で待機）
+  console.log('ℹ️ Service Worker installed, waiting for user approval to activate');
 });
 
 // Service Worker の有効化時
 self.addEventListener('activate', (event) => {
   console.log('✅ Service Worker activated');
   
-  // 全てのクライアントを即座に制御
+  // クライアントを制御（ユーザー承認後）
   event.waitUntil(
     Promise.all([
-      self.clients.claim(),
+      // クライアントを制御（SKIP_WAITINGメッセージを受け取った後）
+      self.clients.claim().catch(() => {
+        console.log('ℹ️ Clients claim completed or not needed');
+      }),
       // 古いキャッシュをクリーンアップ
       caches.keys().then(cacheNames => {
         return Promise.all(

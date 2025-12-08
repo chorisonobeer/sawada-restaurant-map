@@ -11,8 +11,9 @@
     left: 10px;
     width: calc(85% - 0px);
     background: color(background);
-    border: 1px solid color(border);
-    border-radius: border-radius(xs);
+    border: 1px solid color(border-light);
+    border-radius: border-radius(md);
+    box-shadow: shadow(sm);
     
     // 検索結果が表示されている場合（従来の隣接セレクタではなく、コンテナクラスで制御）
     // &:has(+ .search-results:not(:empty)) {

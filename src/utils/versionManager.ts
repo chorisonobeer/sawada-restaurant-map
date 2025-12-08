@@ -148,14 +148,24 @@ class VersionManager {
   private async handleUpdate(newVersion: VersionInfo): Promise<void> {
     console.log('🔄 Handling update...');
     
-    // Service Workerを更新（skipWaiting/clientsClaimはSW側で対応）
+    // Service Workerを更新（ユーザー承認時まで待機）
     await this.updateServiceWorker();
     
     // バージョン情報を保存
     this.saveVersionInfo(newVersion);
     
-    // 強制リロードを実行してUIを更新
-    this.forceReload();
+    // コールバックを呼び出して更新通知イベントを発火（自動リロードは行わない）
+    if (this.forceUpdateCallback) {
+      console.log('📢 Triggering update notification callback');
+      this.forceUpdateCallback();
+    } else {
+      console.warn('⚠️ No update callback registered, dispatching app-version-updated event directly');
+      try {
+        window.dispatchEvent(new CustomEvent('app-version-updated'));
+      } catch (e) {
+        console.error('❌ Error dispatching app-version-updated event:', e);
+      }
+    }
   }
 
   /**
@@ -184,24 +194,44 @@ class VersionManager {
   }
 
   /**
-   * Service Workerを強制更新
+   * Service Workerを更新チェック（ユーザー承認まで待機）
    */
   private async updateServiceWorker(): Promise<void> {
     try {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
+          // 更新をチェック（新しいService Workerがあればwaiting状態になる）
           await registration.update();
           if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            console.log('⏳ New Service Worker is waiting for user approval');
+            // SKIP_WAITINGは送信しない（ユーザーが更新ボタンを押した時のみ送信）
+          } else {
+            console.log('🔄 Service Worker update check completed');
           }
-          console.log('🔄 Service Worker updated');
         } else {
           console.log('ℹ️ No Service Worker registration found');
         }
       }
     } catch (error) {
       console.error('❌ Error updating Service Worker:', error);
+    }
+  }
+
+  /**
+   * ユーザーが更新を承認した時に呼び出す（Service WorkerのSKIP_WAITINGを送信）
+   */
+  async applyUpdate(): Promise<void> {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration && registration.waiting) {
+          console.log('✅ User approved update, sending SKIP_WAITING to Service Worker');
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error applying update:', error);
     }
   }
 
@@ -224,15 +254,11 @@ class VersionManager {
   }
 
   /**
-   * 強制リロード
+   * アプリケーションをリロード（ユーザー承認後に呼び出される）
    */
-  private forceReload(): void {
-    console.log('🔄 Force reloading application...');
-    
-    // 少し遅延を入れてからリロード（ログ出力のため）
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+  reload(): void {
+    console.log('🔄 Reloading application...');
+    window.location.reload();
   }
 
   /**
