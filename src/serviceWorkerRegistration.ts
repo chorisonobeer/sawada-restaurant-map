@@ -23,6 +23,9 @@ type Config = {
   onUpdate?: (registration: ServiceWorkerRegistration) => void;
 };
 
+// setIntervalのIDを保存（クリーンアップ用）
+let swUpdateCheckIntervalId: number | undefined;
+
 export function register(config?: Config) {
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
@@ -111,7 +114,13 @@ function registerValidSW(swUrl: string, config?: Config) {
       };
 
       // 定期的に更新をチェック（5分間隔）
-      setInterval(() => {
+      // 既存のタイマーをクリア（重複実行防止）
+      if (swUpdateCheckIntervalId) {
+        clearInterval(swUpdateCheckIntervalId);
+        console.log('🧹 Cleared existing Service Worker update check timer');
+      }
+      
+      swUpdateCheckIntervalId = window.setInterval(() => {
         console.log('⏰ Periodic Service Worker update check');
         registration.update().catch(error => {
           console.warn('⚠️ Service Worker update check failed:', error);
@@ -183,5 +192,16 @@ export function forceUpdate() {
         }
       });
     });
+  }
+}
+
+/**
+ * リソースをクリーンアップ（HMR対応）
+ */
+export function cleanup(): void {
+  if (swUpdateCheckIntervalId) {
+    clearInterval(swUpdateCheckIntervalId);
+    swUpdateCheckIntervalId = undefined;
+    console.log('🧹 ServiceWorkerRegistration: Update check timer cleared');
   }
 }

@@ -22,6 +22,11 @@ class VersionManager {
   private currentVersion: VersionInfo | null = null;
   private checkInterval: number = 5 * 60 * 1000; // 5分間隔でチェック
   private forceUpdateCallback?: () => void;
+  private intervalId: number | undefined;
+  private isInitialized: boolean = false;
+  private isChecking: boolean = false;
+  private lastCheckTime: number = 0;
+  private readonly minCheckInterval: number = 5 * 60 * 1000; // 最小チェック間隔（5分）
 
   private constructor() {}
 
@@ -36,7 +41,20 @@ class VersionManager {
    * バージョン管理システムを初期化
    */
   async initialize(forceUpdateCallback?: () => void): Promise<void> {
+    // 開発環境では無効化（HMRとの競合を防ぐ）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: Version Manager disabled to prevent HMR conflicts');
+      return;
+    }
+
+    // 重複実行防止
+    if (this.isInitialized) {
+      console.warn('⚠️ VersionManager already initialized, skipping...');
+      return;
+    }
+
     this.forceUpdateCallback = forceUpdateCallback;
+    this.isInitialized = true;
     
     console.log('🔄 Version Manager initializing...');
     
@@ -81,6 +99,22 @@ class VersionManager {
    * サーバーから最新のバージョン情報をチェック
    */
   async checkForUpdates(): Promise<boolean> {
+    // 既にチェック中ならスキップ
+    if (this.isChecking) {
+      console.log('⏭️ Update check already in progress, skipping...');
+      return false;
+    }
+    
+    // 最小間隔をチェック
+    const now = Date.now();
+    if (now - this.lastCheckTime < this.minCheckInterval) {
+      console.log('⏭️ Update check too soon, skipping...');
+      return false;
+    }
+    
+    this.isChecking = true;
+    this.lastCheckTime = now;
+    
     try {
       console.log('🔍 Checking for updates...');
       
@@ -115,6 +149,8 @@ class VersionManager {
     } catch (error) {
       console.error('❌ Error checking for updates:', error);
       return false;
+    } finally {
+      this.isChecking = false;
     }
   }
 
@@ -265,10 +301,29 @@ class VersionManager {
    * 定期的なバージョンチェックを開始
    */
   private startPeriodicCheck(): void {
-    setInterval(async () => {
+    // 既存のタイマーをクリア（重複実行防止）
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      console.log('🧹 Cleared existing periodic check timer');
+    }
+    
+    this.intervalId = window.setInterval(async () => {
       console.log('⏰ Periodic version check...');
       await this.checkForUpdates();
     }, this.checkInterval);
+  }
+
+  /**
+   * リソースをクリーンアップ（HMR対応）
+   */
+  destroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = undefined;
+      console.log('🧹 VersionManager: Periodic check timer cleared');
+    }
+    this.isInitialized = false;
+    this.isChecking = false;
   }
 
   /**

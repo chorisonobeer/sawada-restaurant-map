@@ -17,7 +17,9 @@ import PageViewReporter from './App/PageViewReporter';
 // バージョン管理システムを初期化
 const versionManager = VersionManager.getInstance();
 
-
+// クリーンアップ関数を保存（HMR対応）
+let cleanupFunctions: Array<() => void> = [];
+let loadHandlerRegistered = false;
 
 ReactDOM.render(
   <React.StrictMode>
@@ -45,30 +47,45 @@ serviceWorkerRegistration.register({
 });
 
 // バージョン管理システムを初期化（DOM読み込み完了後）
-window.addEventListener('load', async () => {
-  try {
-    console.log('🚀 Initializing Version Manager...');
-    await versionManager.initialize(() => {
-      // 強制リロードは行わず、更新通知のみ
-      try {
-        window.dispatchEvent(new CustomEvent('app-version-updated'));
-      } catch (e) {}
-    });
+// 重複登録防止
+if (!loadHandlerRegistered) {
+  loadHandlerRegistered = true;
+  const loadHandler = async () => {
+    try {
+      // 開発環境では無効化
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 Development mode: Version Manager initialization skipped');
+        if (process.env.NODE_ENV === 'development') {
+          (window as any).checkForUpdates = () => versionManager.manualUpdateCheck();
+          console.log('🔧 Debug: Use checkForUpdates() to manually check for updates');
+        }
+        return;
+      }
 
-    const currentVersion = versionManager.getCurrentVersion();
-    if (currentVersion) {
-      console.log('📦 App Version:', currentVersion.version);
-      console.log('📅 Build Date:', currentVersion.buildDate);
-    }
+      console.log('🚀 Initializing Version Manager...');
+      await versionManager.initialize(() => {
+        // 強制リロードは行わず、更新通知のみ
+        try {
+          window.dispatchEvent(new CustomEvent('app-version-updated'));
+        } catch (e) {}
+      });
 
-    if (process.env.NODE_ENV === 'development') {
-      (window as any).checkForUpdates = () => versionManager.manualUpdateCheck();
-      console.log('🔧 Debug: Use checkForUpdates() to manually check for updates');
+      const currentVersion = versionManager.getCurrentVersion();
+      if (currentVersion) {
+        console.log('📦 App Version:', currentVersion.version);
+        console.log('📅 Build Date:', currentVersion.buildDate);
+      }
+    } catch (error) {
+      console.error('❌ Error initializing Version Manager:', error);
     }
-  } catch (error) {
-    console.error('❌ Error initializing Version Manager:', error);
-  }
-});
+  };
+  
+  window.addEventListener('load', loadHandler);
+  cleanupFunctions.push(() => {
+    window.removeEventListener('load', loadHandler);
+    loadHandlerRegistered = false;
+  });
+}
 
 // 軽いデバウンスで更新チェック（1.5秒）
 let updateCheckTimer: number | undefined;
@@ -84,18 +101,25 @@ const debounceUpdateCheck = () => {
 };
 
 // ページの可視性が変更された時にバージョンチェック（非破壊、デバウンス）
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    console.log('👁️ Page became visible, debounced update check...');
-    debounceUpdateCheck();
-  }
-});
+// 開発環境では無効化
+if (process.env.NODE_ENV !== 'development') {
+  const visibilityHandler = () => {
+    if (!document.hidden) {
+      console.log('👁️ Page became visible, debounced update check...');
+      debounceUpdateCheck();
+    }
+  };
+  document.addEventListener('visibilitychange', visibilityHandler);
+  cleanupFunctions.push(() => document.removeEventListener('visibilitychange', visibilityHandler));
 
-// ネットワーク接続が復旧した時にバージョンチェック（非破壊、デバウンス）
-window.addEventListener('online', () => {
-  console.log('🌐 Network connection restored, debounced update check...');
-  debounceUpdateCheck();
-});
+  // ネットワーク接続が復旧した時にバージョンチェック（非破壊、デバウンス）
+  const onlineHandler = () => {
+    console.log('🌐 Network connection restored, debounced update check...');
+    debounceUpdateCheck();
+  };
+  window.addEventListener('online', onlineHandler);
+  cleanupFunctions.push(() => window.removeEventListener('online', onlineHandler));
+}
 
 // 非侵襲な更新通知トースト（モダン・フローティング型）
 function showUpdateToast() {
@@ -252,20 +276,28 @@ function showUpdateToast() {
       // Service Workerの更新を適用（SKIP_WAITINGを送信）
       await versionManager.applyUpdate();
       
+      // トーストを非表示にする（アニメーション開始）
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 200);
+      
       // 少し待ってからリロード（Service Workerが有効化される時間を確保）
+      // フラグはリロード実行直前でクリア（レースコンディションを防ぐ）
       setTimeout(() => {
+        (window as any).__updateToastVisible = false;
         versionManager.reload();
       }, 300);
     } catch (error) {
       console.error('❌ Error applying update:', error);
-      // エラーが発生した場合でもリロードを試みる
-      setTimeout(() => {
-        versionManager.reload();
-      }, 300);
-    } finally {
+      // トーストを非表示にする（アニメーション開始）
       toast.classList.add('hide');
       setTimeout(() => toast.remove(), 200);
+      
+      // エラーが発生した場合でもリロードを試みる
+      // フラグはリロード実行直前でクリア（レースコンディションを防ぐ）
+      setTimeout(() => {
       (window as any).__updateToastVisible = false;
+        versionManager.reload();
+      }, 300);
     }
   });
 
@@ -291,5 +323,49 @@ function showUpdateToast() {
 // グローバル公開して、UpdateNotifierから呼べるようにする
 (window as any).__showUpdateToast = showUpdateToast;
 
-// 更新通知の集約と重複ガードを初期化
-UpdateNotifier.getInstance().init();
+// 更新通知の集約と重複ガードを初期化（開発環境では無効化）
+if (process.env.NODE_ENV !== 'development') {
+  UpdateNotifier.getInstance().init();
+}
+
+// HMR対応: モジュール再読み込み時にクリーンアップ
+if (typeof module !== 'undefined' && (module as any).hot) {
+  (module as any).hot.dispose(() => {
+    console.log('🧹 HMR: Cleaning up event listeners and timers...');
+    // クリーンアップ関数を実行
+    cleanupFunctions.forEach(cleanup => {
+      try {
+        cleanup();
+      } catch (error) {
+        console.error('❌ Error during cleanup:', error);
+      }
+    });
+    cleanupFunctions = [];
+    
+    // VersionManagerとUpdateNotifierのクリーンアップ
+    try {
+      versionManager.destroy?.();
+    } catch (error) {
+      console.error('❌ Error destroying VersionManager:', error);
+    }
+    
+    try {
+      UpdateNotifier.getInstance().destroy?.();
+    } catch (error) {
+      console.error('❌ Error destroying UpdateNotifier:', error);
+    }
+    
+    // ServiceWorkerRegistrationのクリーンアップ
+    try {
+      serviceWorkerRegistration.cleanup?.();
+    } catch (error) {
+      console.error('❌ Error cleaning up ServiceWorkerRegistration:', error);
+    }
+    
+    // タイマーをクリア
+    if (updateCheckTimer) {
+      clearTimeout(updateCheckTimer);
+      updateCheckTimer = undefined;
+    }
+  });
+}

@@ -10,6 +10,8 @@ class UpdateNotifier {
   private latestTimestampSeen: number | undefined;
   private readonly debounceMs = 300;
   private readonly storageKey = 'last_notified_timestamp';
+  private isInitialized: boolean = false;
+  private eventHandlers: Array<{ event: string; handler: EventListener }> = [];
 
   static getInstance(): UpdateNotifier {
     if (!UpdateNotifier.instance) {
@@ -19,8 +21,50 @@ class UpdateNotifier {
   }
 
   init(): void {
-    window.addEventListener('sw-update-available', this.onUpdateEvent);
-    window.addEventListener('app-version-updated', this.onUpdateEvent);
+    // 開発環境では無効化（HMRとの競合を防ぐ）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: UpdateNotifier disabled to prevent HMR conflicts');
+      return;
+    }
+
+    // 重複実行防止
+    if (this.isInitialized) {
+      console.warn('⚠️ UpdateNotifier already initialized, skipping...');
+      return;
+    }
+
+    this.isInitialized = true;
+
+    const swHandler = this.onUpdateEvent;
+    const appHandler = this.onUpdateEvent;
+
+    window.addEventListener('sw-update-available', swHandler);
+    window.addEventListener('app-version-updated', appHandler);
+
+    this.eventHandlers = [
+      { event: 'sw-update-available', handler: swHandler },
+      { event: 'app-version-updated', handler: appHandler }
+    ];
+  }
+
+  /**
+   * リソースをクリーンアップ（HMR対応）
+   */
+  destroy(): void {
+    // イベントリスナーを削除
+    this.eventHandlers.forEach(({ event, handler }) => {
+      window.removeEventListener(event, handler);
+    });
+    this.eventHandlers = [];
+
+    // タイマーをクリア
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
+    }
+
+    this.isInitialized = false;
+    console.log('🧹 UpdateNotifier: Event listeners and timers cleared');
   }
 
   private onUpdateEvent = (_e: Event) => {
@@ -69,7 +113,7 @@ class UpdateNotifier {
     if (typeof (window as any).__showUpdateToast === 'function') {
       console.log('📢 Showing update notification toast');
       try {
-        (window as any).__showUpdateToast();
+      (window as any).__showUpdateToast();
         this.setLastNotifiedTimestamp(serverTs);
       } catch (error) {
         console.error('❌ Error showing update toast:', error);
