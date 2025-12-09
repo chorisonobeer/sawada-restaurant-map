@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useContext } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import ShopListItem from './ShopListItem';
 import Shop from './Shop';
 import './List.scss';
@@ -189,8 +190,8 @@ const Content = (props: Props) => {
   const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
   const listRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [listParent] = useAutoAnimate<HTMLDivElement>();
   const mountedRef = useRef(true);
   const { location } = useContext(GeolocationContext);
   const initializationRef = useRef<boolean>(false);
@@ -405,7 +406,7 @@ const Content = (props: Props) => {
 
       <div className="shop-list-content" style={{ height: '100%', overflow: 'visible', paddingTop: '10px' }}>
         {isInitializing ? skeletonLoader : (
-          <div style={{ paddingBottom: '80px' }} ref={scrollRef}>
+          <div style={{ paddingBottom: '80px' }} ref={listParent}>
             {list.slice(0, displayCount).map((item, index) => (
               <ItemBoundary key={`plain-${item.index || index}`} item={item} index={index}>
                 <div className="shop-item-wrapper">

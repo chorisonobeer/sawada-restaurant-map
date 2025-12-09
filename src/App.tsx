@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import PageTransition from './App/PageTransition';
 import { GeolocationProvider } from './context/GeolocationContext';
 import Home from './App/Home';
 import List from './App/List';
@@ -63,7 +64,7 @@ const App: React.FC = React.memo(() => {
 
   // メモ化されたルートコンポーネント
   const routes = useMemo(() => (
-    <Routes>
+    <Routes location={location} key={location.pathname}>
       <Route path="/" element={
         <Home 
           data={shopList} 
@@ -78,7 +79,7 @@ const App: React.FC = React.memo(() => {
       <Route path="/about" element={<AboutUs />} />
       <Route path="/events" element={<Events />} />
     </Routes>
-  ), [shopList, selectedShop]);
+  ), [shopList, selectedShop, location]);
 
   if (error) return <div className="app-error">{error}</div>;
 
@@ -86,7 +87,9 @@ const App: React.FC = React.memo(() => {
     <GeolocationProvider>
       <div className="app">
         <div className="app-body">
-          {routes}
+          <PageTransition locationKey={location.pathname}>
+            {routes}
+          </PageTransition>
         </div>
         {persistentMap}
         <div id="modal-root"></div>
