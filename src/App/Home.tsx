@@ -5,6 +5,7 @@ Last Modified: 2025-03-19 17:30:00
 
 import React, { useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import { AnimatePresence } from 'framer-motion';
 import Shop from './Shop';
 import SearchFeature from './SearchFeature';
 import './Home.scss';
@@ -37,9 +38,12 @@ const Home: React.FC<HomeProps> = React.memo((props) => {
   ), [memoizedData, onSelectShop, onSearchResults]);
 
   const shopModal = useMemo(() => {
-    if (!selectedShop) return null;
     return ReactDOM.createPortal(
-      <Shop shop={selectedShop} close={handleCloseShop} />,
+      <AnimatePresence exitBeforeEnter>
+        {selectedShop && (
+          <Shop shop={selectedShop} close={handleCloseShop} key={selectedShop.index} />
+        )}
+      </AnimatePresence>,
       document.getElementById('modal-root') as HTMLElement
     );
   }, [selectedShop, handleCloseShop]);

@@ -5,6 +5,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { fadeInUp, modalTransition } from '../lib/animations/presets';
 import PWAInstallManager from '../utils/PWAInstallManager';
 import './PWAInstallBanner.scss';
 
@@ -74,16 +76,24 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ onClose }) => {
     }
   };
 
-  if (!isVisible) {
-    return null;
-  }
-
   return (
-    <div 
-      className={`pwa-install-banner-backdrop ${isAnimating ? 'visible' : ''}`}
-      onClick={handleBackdropClick}
-    >
-      <div className={`pwa-install-banner ${isAnimating ? 'slide-in' : ''}`}>
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          className={`pwa-install-banner-backdrop ${isAnimating ? 'visible' : ''}`}
+          onClick={handleBackdropClick}
+          variants={fadeInUp}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <motion.div
+            className={`pwa-install-banner ${isAnimating ? 'slide-in' : ''}`}
+            variants={modalTransition}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
         <div className="pwa-banner-content">
           <div className="pwa-banner-icon">
             <img 
@@ -135,8 +145,10 @@ const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({ onClose }) => {
             </svg>
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

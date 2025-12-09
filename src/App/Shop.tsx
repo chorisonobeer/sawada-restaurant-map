@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useContext, useMemo } from "react";
+import { motion } from "framer-motion";
 import Analytics from "../utils/analytics";
 import Links from "./Links";
 import "./Shop.scss";
@@ -10,6 +11,7 @@ import * as turf from "@turf/turf";
 import ZoomableImage from "./ZoomableImage";
 import zen2han from "../lib/zen2han";
 import config from '../config.json';
+import { modalTransition } from "../lib/animations/presets";
 
 // Google Drive 画像URLをプロキシ化する関数
 const transformImageUrl = (url?: string): string | undefined => {
@@ -57,21 +59,11 @@ type Props = {
 const SWIPE_THRESHOLD = 80;
 
 const Shop: React.FC<Props> = (props) => {
-  const [isClosing, setIsClosing] = useState(false);
   const [loaded, setLoaded] = useState<boolean[]>([]);
   const [localDistance, setLocalDistance] = useState<number | undefined>(undefined);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { location } = useContext(GeolocationContext);
-
-  // アニメーション用: マウント時に .slide-in クラスを付与して右側からスライドイン
-  useEffect(() => {
-    if (containerRef.current) {
-      setTimeout(() => {
-        containerRef.current?.classList.add("slide-in");
-      }, 10);
-    }
-  }, []);
 
   // もしprops.shop.distanceが未定義なら、現在位置からの距離を計算
   useEffect(() => {
@@ -113,11 +105,7 @@ const Shop: React.FC<Props> = (props) => {
   };
 
   const handleClose = () => {
-    setIsClosing(true);
-    // アニメーション完了後に実際のclose処理を実行
-    setTimeout(() => {
-      props.close();
-    }, 300); // CSSのtransition時間と合わせる
+    props.close();
   };
 
   const distanceTipText =
@@ -211,11 +199,15 @@ const Shop: React.FC<Props> = (props) => {
     };
 
     return (
-      <div
-        className={`shop-single ${isClosing ? 'closing' : ''}`}
+      <motion.div
+        className="shop-single"
         ref={containerRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        variants={modalTransition}
+        initial="initial"
+        animate="animate"
+        exit="exit"
       >
         <div className="head">
           <button onClick={handleClose}>
@@ -365,7 +357,7 @@ const Shop: React.FC<Props> = (props) => {
               </a>
             )}
           </div>
-        </div>
+      </motion.div>
     );
 };
 
