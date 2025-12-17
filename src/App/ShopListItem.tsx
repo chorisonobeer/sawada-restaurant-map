@@ -35,11 +35,11 @@ const transformImageUrl = (url?: string): string | undefined => {
 
   // プロキシURLを返す（本番はNetlify Functionsを前提）
   if (proxyBase) {
-    return `${proxyBase}?id=${encodeURIComponent(id)}`;
+    return `${proxyBase}?id=${encodeURIComponent(id)}&width=600`;
   }
 
   // フォールバック：サムネイルAPI（主にローカルでの確認用）
-  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w640`;
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w600`;
 };
 
 // 営業時間から曜日表記を取り除き、時間のみを返す
@@ -67,16 +67,16 @@ const Content = (props: Props) => {
     props.popupHandler(props.data);
   };
 
-  const distanceTipText = props.data.distance !== undefined 
+  const distanceTipText = props.data.distance !== undefined
     ? makeDistanceLabelText(props.data.distance)
     : '距離不明';
-  
+
   const categoryRaw = props.data['カテゴリ'];
   const categoryStr = typeof categoryRaw === 'string' ? categoryRaw : '';
   const categories = categoryStr
     ? categoryStr.split(/,|、|\s+/).map((cat) => String(cat).trim()).filter((cat) => cat !== '')
     : [];
-  
+
   const imageRaw = props.data['画像'];
   const image = typeof imageRaw === 'string' ? imageRaw.trim() : '';
   const transformedImageUrl = image ? transformImageUrl(image) : undefined;
@@ -122,7 +122,7 @@ const Content = (props: Props) => {
       </div>
 
       <div className="image-box">
-        { displayImage && (
+        {displayImage && (
           <img
             src={displayImage}
             alt={String(props.data['スポット名'] || '')}
@@ -132,21 +132,21 @@ const Content = (props: Props) => {
             height={240}
             onClick={clickHandler}
           />
-        ) }
+        )}
       </div>
-      
+
       {/* 画像の上部に四角枠で情報を配置 */}
       <div className="info-box" onClick={clickHandler}>
         <div className="info-row">
           <span className="info-label">営業時間</span>
           <span className="info-value">
-            {hourRanges.length > 0 
+            {hourRanges.length > 0
               ? hourRanges.map((range, idx) => (
-                  <span key={`hr-${idx}`}>
-                    {range}
-                    {idx < hourRanges.length - 1 && <br />}
-                  </span>
-                ))
+                <span key={`hr-${idx}`}>
+                  {range}
+                  {idx < hourRanges.length - 1 && <br />}
+                </span>
+              ))
               : hours}
           </span>
         </div>

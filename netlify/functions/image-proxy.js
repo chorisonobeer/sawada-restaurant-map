@@ -32,16 +32,19 @@ exports.handler = async (event) => {
     const params = event.queryStringParameters || {};
     const id = params.id;
     const rawUrl = params.url;
+    const width = params.width || 800; // Default width if not specified
 
     let targetUrl = null;
 
     if (id) {
-      targetUrl = `https://drive.google.com/uc?id=${encodeURIComponent(id)}`;
+      // Use thumbnail API for resizing
+      // sz=w{width} requests an image with valid width (keeping aspect ratio)
+      targetUrl = `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${width}`;
     } else if (rawUrl) {
-      // If it's a Drive URL, convert to uc?id
+      // If it's a Drive URL, convert to thumbnail API
       const driveId = extractDriveId(rawUrl);
       if (driveId) {
-        targetUrl = `https://drive.google.com/uc?id=${encodeURIComponent(driveId)}`;
+        targetUrl = `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveId)}&sz=w${width}`;
       } else {
         // Otherwise, allow only specific hosts
         try {
@@ -73,6 +76,10 @@ exports.handler = async (event) => {
     // Fetch binary and stream back
     const res = await fetch(targetUrl, { redirect: 'follow' });
     if (!res.ok) {
+      // Fallback: If thumbnail fails (e.g. 404 or 403), try the original uc?id method?
+      // For now, return error, or maybe fallback to original if strictly needed.
+      // But usually thumbnail API helps avoid quotas too.
+      // Let's stick to returning error to see if it fails.
       return {
         statusCode: res.status,
         headers: { 'Content-Type': 'application/json' },
@@ -89,7 +96,7 @@ exports.handler = async (event) => {
       isBase64Encoded: true,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=604800', // 7日間キャッシュ
+        'Cache-Control': 'public, max-age=604800', // 7 days
       },
       body: base64Body,
     };
@@ -99,5 +106,5 @@ exports.handler = async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'internal_error', message: String((err && err.message) || err) }),
     };
-  }
+  };
 };

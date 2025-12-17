@@ -1,7 +1,7 @@
 {
   "short_name": "佐和田料飲店マップ",
   "name": "佐和田料飲店マップ2025",
-  "version": "2025.12.17.1421",
+  "version": "2025.12.18.0150",
   "icons": [
     {
       "src": "manifest-icon-192.maskable.png",
@@ -37,7 +37,7 @@
   "display": "standalone",
   "theme_color": "#FFFFFF",
   "background_color": "#ffffff",
-  "build_timestamp": 1765948892206,
-  "build_date": "2025-12-17T05:21:32.206Z",
-  "last_updated": "2025-12-17T05:21:32.206Z"
+  "build_timestamp": 1765990205202,
+  "build_date": "2025-12-17T16:50:05.202Z",
+  "last_updated": "2025-12-17T16:50:05.202Z"
 }

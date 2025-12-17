@@ -35,11 +35,12 @@ const transformImageUrl = (url?: string): string | undefined => {
 
   // プロキシURLを返す（本番はNetlify Functionsを前提）
   if (proxyBase) {
-    return `${proxyBase}?id=${encodeURIComponent(id)}`;
+    return `${proxyBase}?id=${encodeURIComponent(id)}&width=600`;
   }
 
   // フォールバック：サムネイルAPI（主にローカルでの確認用）
-  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w640`;
+  // 以前は w640 でしたが、統一感のため w600 にします（サイズは任意）
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w600`;
 };
 
 const sortShopList = (shopList: Pwamap.ShopData[]) => {
