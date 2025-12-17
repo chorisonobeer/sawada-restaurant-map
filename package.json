@@ -33,7 +33,12 @@
     "react-swipeable": "^7.0.2",
     "react-virtuoso": "^4.15.0",
     "react-window": "^1.8.6",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "workbox-core": "^7.4.0",
+    "workbox-expiration": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0",
+    "workbox-strategies": "^7.4.0"
   },
   "scripts": {
     "start": "vite",
