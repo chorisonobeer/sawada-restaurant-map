@@ -14,10 +14,10 @@ declare global {
   }
 }
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = import.meta.env.PROD;
 
 const GA_MEASUREMENT_ID =
-  (process.env.REACT_APP_GA_MEASUREMENT_ID as string | undefined) ||
+  (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) ||
   (typeof window !== 'undefined' ? (window.__GA_MEASUREMENT_ID__ as string | undefined) : undefined) ||
   undefined;
 
@@ -74,7 +74,7 @@ function track(name: string, data: Record<string, unknown> = {}): void {
     if (!isReady()) initGAIfNeeded();
     if (!isReady()) return;
     window.gtag!('event', name, data);
-  } catch {}
+  } catch { }
 }
 
 function trackView(url?: string): void {
@@ -88,7 +88,7 @@ function trackView(url?: string): void {
       page_location,
       page_path,
     });
-  } catch {}
+  } catch { }
 }
 
 export const Analytics = {

@@ -28,7 +28,7 @@ class VersionManager {
   private lastCheckTime: number = 0;
   private readonly minCheckInterval: number = 5 * 60 * 1000; // 最小チェック間隔（5分）
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): VersionManager {
     if (!VersionManager.instance) {
@@ -42,7 +42,7 @@ class VersionManager {
    */
   async initialize(forceUpdateCallback?: () => void): Promise<void> {
     // 開発環境では無効化（HMRとの競合を防ぐ）
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('🔧 Development mode: Version Manager disabled to prevent HMR conflicts');
       return;
     }
@@ -55,18 +55,18 @@ class VersionManager {
 
     this.forceUpdateCallback = forceUpdateCallback;
     this.isInitialized = true;
-    
+
     console.log('🔄 Version Manager initializing...');
-    
+
     // 現在のバージョン情報を取得
     await this.loadCurrentVersion();
-    
+
     // 即座にバージョンチェックを実行
     await this.checkForUpdates();
-    
+
     // 定期的なバージョンチェックを開始
     this.startPeriodicCheck();
-    
+
     console.log('✅ Version Manager initialized');
   }
 
@@ -76,9 +76,9 @@ class VersionManager {
   private async loadCurrentVersion(): Promise<void> {
     try {
       // 環境変数から現在のビルド情報を取得
-      const buildVersion = process.env.REACT_APP_BUILD_VERSION;
-      const buildTimestamp = process.env.REACT_APP_BUILD_TIMESTAMP;
-      const buildDate = process.env.REACT_APP_BUILD_DATE;
+      const buildVersion = import.meta.env.VITE_BUILD_VERSION;
+      const buildTimestamp = import.meta.env.VITE_BUILD_TIMESTAMP;
+      const buildDate = import.meta.env.VITE_BUILD_DATE;
 
       if (buildVersion && buildTimestamp && buildDate) {
         this.currentVersion = {
@@ -104,20 +104,20 @@ class VersionManager {
       console.log('⏭️ Update check already in progress, skipping...');
       return false;
     }
-    
+
     // 最小間隔をチェック
     const now = Date.now();
     if (now - this.lastCheckTime < this.minCheckInterval) {
       console.log('⏭️ Update check too soon, skipping...');
       return false;
     }
-    
+
     this.isChecking = true;
     this.lastCheckTime = now;
-    
+
     try {
       console.log('🔍 Checking for updates...');
-      
+
       // キャッシュを回避してversion.jsonを取得
       const response = await fetch(`/version.json?t=${Date.now()}`, {
         cache: 'no-cache',
@@ -167,14 +167,14 @@ class VersionManager {
     if (serverVersion.timestamp > this.currentVersion.timestamp) {
       return true;
     }
-    
+
     // タイムスタンプが同じ場合、ハッシュ値が異なる場合は更新
-    if (serverVersion.timestamp === this.currentVersion.timestamp && 
-        serverVersion.hash && this.currentVersion.hash && 
-        serverVersion.hash !== this.currentVersion.hash) {
+    if (serverVersion.timestamp === this.currentVersion.timestamp &&
+      serverVersion.hash && this.currentVersion.hash &&
+      serverVersion.hash !== this.currentVersion.hash) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -183,13 +183,13 @@ class VersionManager {
    */
   private async handleUpdate(newVersion: VersionInfo): Promise<void> {
     console.log('🔄 Handling update...');
-    
+
     // Service Workerを更新（ユーザー承認時まで待機）
     await this.updateServiceWorker();
-    
+
     // バージョン情報を保存
     this.saveVersionInfo(newVersion);
-    
+
     // コールバックを呼び出して更新通知イベントを発火（自動リロードは行わない）
     if (this.forceUpdateCallback) {
       console.log('📢 Triggering update notification callback');
@@ -281,7 +281,7 @@ class VersionManager {
         timestamp: versionInfo.timestamp,
         lastChecked: Date.now()
       };
-      
+
       localStorage.setItem('app_version_info', JSON.stringify(storedInfo));
       console.log('💾 Version info saved');
     } catch (error) {
@@ -306,7 +306,7 @@ class VersionManager {
       clearInterval(this.intervalId);
       console.log('🧹 Cleared existing periodic check timer');
     }
-    
+
     this.intervalId = window.setInterval(async () => {
       console.log('⏰ Periodic version check...');
       await this.checkForUpdates();

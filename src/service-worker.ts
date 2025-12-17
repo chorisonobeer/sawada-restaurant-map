@@ -54,7 +54,7 @@ registerRoute(
     // Return true to signal that we want to use the handler.
     return true;
   },
-  createHandlerBoundToURL(process.env.PUBLIC_URL + '/index.html')
+  createHandlerBoundToURL(import.meta.env.BASE_URL + 'index.html')
 );
 
 // JavaScript/CSS ファイルに対してNetworkFirst戦略を適用（常に最新を優先）
@@ -194,7 +194,7 @@ self.addEventListener('install', (event) => {
 // Service Worker の有効化時
 self.addEventListener('activate', (event) => {
   console.log('✅ Service Worker activated');
-  
+
   // クライアントを制御（ユーザー承認後）
   event.waitUntil(
     Promise.all([
@@ -207,8 +207,8 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map(cacheName => {
             // 古いバージョンのキャッシュを削除
-            if (cacheName.includes('workbox-precache') && 
-                !cacheName.includes('workbox-precache-v2')) {
+            if (cacheName.includes('workbox-precache') &&
+              !cacheName.includes('workbox-precache-v2')) {
               console.log('🗑️ Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }

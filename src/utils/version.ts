@@ -17,9 +17,9 @@ export interface VersionInfo {
  */
 export const getVersionInfo = (): VersionInfo => {
   const version = packageJson.version;
-  const buildDate = process.env.REACT_APP_BUILD_DATE || new Date().toISOString().split('T')[0];
-  const environment = process.env.NODE_ENV || 'development';
-  
+  const buildDate = import.meta.env.VITE_BUILD_DATE || new Date().toISOString().split('T')[0];
+  const environment = import.meta.env.MODE || 'development';
+
   return {
     version,
     buildDate,

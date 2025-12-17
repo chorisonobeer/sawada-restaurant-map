@@ -1,7 +1,6 @@
-@import '../styles/design-tokens.scss';
+@use '../styles/design-tokens' as *;
 
-.tabbar
-{
+.tabbar {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -11,8 +10,7 @@
   background-color: color(background);
   box-shadow: 0 -0.25rem 0.75rem color(shadow);
 
-  ul
-  {
+  ul {
     list-style-type: none;
     margin: 0;
     padding: 0;
@@ -20,16 +18,14 @@
     grid-template-columns: repeat(5, 1fr);
     width: 100%;
 
-    li
-    {
+    li {
       text-align: center;
       min-height: 80px;
       box-sizing: border-box;
       background-color: color(background);
     }
 
-    a
-    {
+    a {
       color: color(text-secondary);
       text-decoration: none;
       display: flex;
@@ -40,14 +36,16 @@
       height: 80px;
       gap: 6px;
 
-      .icon
-      {
+      .icon {
         line-height: 1;
       }
-      .icon > svg { width: 22px; height: 22px; }
 
-      .text
-      {
+      .icon>svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .text {
         font-size: font-size(sm);
         font-weight: font-weight(bold);
         line-height: 1.2;
@@ -56,13 +54,13 @@
         text-overflow: ellipsis;
         max-width: 100%;
       }
-      
+
       &.active {
         color: color(primary);
         font-weight: font-weight(bold);
       }
     }
-    
+
     // 縦線を削除（UI改善）
     // li + li { border-left: 1px solid color(border-light); }
   }

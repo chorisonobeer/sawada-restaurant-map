@@ -34,8 +34,8 @@ const haversineMeters = (from: [number, number], to: [number, number]) => {
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -46,7 +46,7 @@ const calculateDistancesWithWorker = (shops: Pwamap.ShopData[], position: number
     try {
       const worker = new Worker('/workers/distance-worker.js');
       const timeout = setTimeout(() => {
-        try { worker.terminate(); } catch (_) {}
+        try { worker.terminate(); } catch (_) { }
         reject(new Error('Worker timeout'));
       }, 8000);
       worker.onmessage = (e: MessageEvent) => {
@@ -220,14 +220,14 @@ const Content = (props: Props) => {
       if (!mountedRef.current) return;
       setIsInitializing(true);
       performance.mark('list-init-start');
-      
+
       try {
         const cacheKey = queryCategory ? `filtered-${queryCategory}` : 'all';
         const sortedCacheKey = `sorted-${queryCategory ? `filtered-${queryCategory}` : 'all'}-${location ? location.join(',') : 'no-location'}`;
         const cachedSortedData = dataCache.get(sortedCacheKey);
         if (
           cachedSortedData &&
-          process.env.REACT_APP_ORDERBY === 'distance' &&
+          import.meta.env.VITE_ORDERBY === 'distance' &&
           cachedSortedData.length > 0
         ) {
           if (!mountedRef.current) return;
@@ -238,10 +238,10 @@ const Content = (props: Props) => {
           performance.measure('list-init', 'list-init-start', 'list-init-end');
           return;
         }
-        
+
         const cachedData = dataCache.get(cacheKey);
         let filteredData;
-        
+
         if (cachedData && cachedData.length > 0) {
           filteredData = cachedData;
         } else {
@@ -259,9 +259,9 @@ const Content = (props: Props) => {
             dataCache.set(cacheKey, filteredData);
           }
         }
-        
+
         // 未取得の位置情報でも即表示（非ブロッキング）
-        if (process.env.REACT_APP_ORDERBY === 'distance') {
+        if (import.meta.env.VITE_ORDERBY === 'distance') {
           try {
             performance.mark('distance-sort-start');
             const maybeSorted = await sortShopList(filteredData, location);
@@ -304,7 +304,7 @@ const Content = (props: Props) => {
         performance.measure('list-init', 'list-init-start', 'list-init-end');
       }
     };
-    
+
     initializeData();
   }, [props.data, queryCategory, location]);
 
@@ -338,12 +338,12 @@ const Content = (props: Props) => {
     }
 
     setIsLoading(true);
-    
+
     const t = setTimeout(() => {
       try {
         const nextCount = Math.min(displayCount + LOAD_MORE_SIZE, data.length);
         const newItems = data.slice(0, nextCount);
-        
+
         if (mountedRef.current) {
           setList(newItems);
           setDisplayCount(nextCount);
@@ -423,7 +423,7 @@ const Content = (props: Props) => {
             {/* 手動読み込みボタン（スクロール内） */}
             {!isInitializing && displayCount < data.length && (
               <div className="load-more-container">
-                <button 
+                <button
                   className="load-more-button"
                   onClick={loadMore}
                   disabled={isLoading}
@@ -448,7 +448,7 @@ const Content = (props: Props) => {
           </div>
         )}
       </div>
-      
+
       {shop && <Shop shop={shop} close={closeHandler} />}
     </div>
   );
@@ -469,7 +469,7 @@ class ItemBoundary extends React.Component<{ children: React.ReactNode; item?: P
       const name = typeof it?.['スポット名'] === 'string' ? it['スポット名'] : '';
       const cat = typeof it?.['カテゴリ'] === 'string' ? it['カテゴリ'] : '';
       console.error('List item render error', { index: this.props.index, name, category: cat, error });
-    } catch {}
+    } catch { }
   }
   render() {
     if (this.state.hasError) return null;

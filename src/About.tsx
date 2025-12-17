@@ -6,18 +6,18 @@ import config from './config.json'
 
 const Content = () => {
 
-  const logoUrl = config.logo_image_url || `${process.env.PUBLIC_URL}/logo.svg`
+  const logoUrl = config.logo_image_url || `${import.meta.env.BASE_URL}logo.svg`
 
   return (
     <div className="about">
       <div className="branding">
         <img className="image" src={logoUrl} alt="" decoding="async" onError={(e) => {
-          (e.currentTarget as HTMLImageElement).src = `${process.env.PUBLIC_URL}/logo.svg`;
+          (e.currentTarget as HTMLImageElement).src = `${import.meta.env.BASE_URL}logo.svg`;
         }} />
       </div>
 
       <div className="description">{config.description}</div>
-      <div className="qrcode"><Qrcode url={window.location.href}/></div>
+      <div className="qrcode"><Qrcode url={window.location.href} /></div>
       <Share />
     </div>
   );

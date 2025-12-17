@@ -1,4 +1,5 @@
 // Design tokens (responsive-friendly)
+@use "sass:map";
 
 // ============================================
 // Color Palette
@@ -38,16 +39,25 @@ $spacing: (
 // Layout sizes (reflecting structural dependencies)
 // ============================================
 $layout: (
-  footer-height: 3.75rem, // 60px
+  footer-height: 3.75rem,
+  // 60px
   footer-height-with-safe: calc(3.75rem + env(safe-area-inset-bottom)),
-  search-top-offset: 0.625rem, // 10px
-  search-left-offset: 0.625rem, // 10px
-  search-input-height: 2rem, // 32px
-  search-filter-gap: 0.625rem, // 10px
-  search-filter-row-height: 2.5rem, // 40px (estimated base)
-  tabbar-height-mobile: 5rem, // 80px
-  tabbar-height-desktop: 4.375rem, // 70px
-  shop-action-buttons-height: 12.5rem, // 200px
+  search-top-offset: 0.625rem,
+  // 10px
+  search-left-offset: 0.625rem,
+  // 10px
+  search-input-height: 2rem,
+  // 32px
+  search-filter-gap: 0.625rem,
+  // 10px
+  search-filter-row-height: 2.5rem,
+  // 40px (estimated base)
+  tabbar-height-mobile: 5rem,
+  // 80px
+  tabbar-height-desktop: 4.375rem,
+  // 70px
+  shop-action-buttons-height: 12.5rem,
+  // 200px
   shop-head-height: 2.75rem // 44px
 );
 
@@ -134,38 +144,37 @@ $breakpoints: (
 // Helper functions
 // ============================================
 @function color($key) {
-  @return map-get($colors, $key);
+  @return map.get($colors, $key);
 }
 
 @function spacing($key) {
-  @return map-get($spacing, $key);
+  @return map.get($spacing, $key);
 }
 
 @function layout($key) {
-  @return map-get($layout, $key);
+  @return map.get($layout, $key);
 }
 
 @function border-radius($key) {
-  @return map-get($border-radius, $key);
+  @return map.get($border-radius, $key);
 }
 
 @function shadow($key) {
-  @return map-get($shadow, $key);
+  @return map.get($shadow, $key);
 }
 
 @function z-index($key) {
-  @return map-get($z-index, $key);
+  @return map.get($z-index, $key);
 }
 
 @function font-size($key) {
-  @return map-get($font-size, $key);
+  @return map.get($font-size, $key);
 }
 
 @function font-weight($key) {
-  @return map-get($font-weight, $key);
+  @return map.get($font-weight, $key);
 }
 
 @function line-height($key) {
-  @return map-get($line-height, $key);
+  @return map.get($line-height, $key);
 }
-

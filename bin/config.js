@@ -38,7 +38,7 @@ const envText =
   Object.keys(config)
     // オブジェクト等は環境変数として出力しない
     .filter((key) => typeof config[key] === "string" || typeof config[key] === "number")
-    .map((key) => `REACT_APP_${key.toUpperCase()}="${config[key]}"`)
+    .map((key) => `VITE_${key.toUpperCase()}="${config[key]}"`)
     .join("\n") + "\n";
 
 // NODE_ENVに応じて開発用プロキシURLに切り替え
@@ -50,5 +50,5 @@ if (isDev && config.image_proxy_url_dev) {
 // 全ての設定は src/config.json として出力する
 fs.writeFileSync(distConfigFilePath, JSON.stringify(config, null, 2));
 
-fs.writeFileSync(path.join(process.cwd() , '.env'), envText)
+fs.writeFileSync(path.join(process.cwd(), '.env'), envText)
 process.exit(0);

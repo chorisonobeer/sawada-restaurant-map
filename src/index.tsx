@@ -53,9 +53,9 @@ if (!loadHandlerRegistered) {
   const loadHandler = async () => {
     try {
       // 開発環境では無効化
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('🔧 Development mode: Version Manager initialization skipped');
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           (window as any).checkForUpdates = () => versionManager.manualUpdateCheck();
           console.log('🔧 Debug: Use checkForUpdates() to manually check for updates');
         }
@@ -67,7 +67,7 @@ if (!loadHandlerRegistered) {
         // 強制リロードは行わず、更新通知のみ
         try {
           window.dispatchEvent(new CustomEvent('app-version-updated'));
-        } catch (e) {}
+        } catch (e) { }
       });
 
       const currentVersion = versionManager.getCurrentVersion();
@@ -79,7 +79,7 @@ if (!loadHandlerRegistered) {
       console.error('❌ Error initializing Version Manager:', error);
     }
   };
-  
+
   window.addEventListener('load', loadHandler);
   cleanupFunctions.push(() => {
     window.removeEventListener('load', loadHandler);
@@ -102,7 +102,7 @@ const debounceUpdateCheck = () => {
 
 // ページの可視性が変更された時にバージョンチェック（非破壊、デバウンス）
 // 開発環境では無効化
-if (process.env.NODE_ENV !== 'development') {
+if (import.meta.env.PROD) {
   const visibilityHandler = () => {
     if (!document.hidden) {
       console.log('👁️ Page became visible, debounced update check...');
@@ -272,14 +272,14 @@ function showUpdateToast() {
     addRipple(e, btnUpdate);
     try {
       (window as any).__pendingReload = true;
-      
+
       // Service Workerの更新を適用（SKIP_WAITINGを送信）
       await versionManager.applyUpdate();
-      
+
       // トーストを非表示にする（アニメーション開始）
       toast.classList.add('hide');
       setTimeout(() => toast.remove(), 200);
-      
+
       // 少し待ってからリロード（Service Workerが有効化される時間を確保）
       // フラグはリロード実行直前でクリア（レースコンディションを防ぐ）
       setTimeout(() => {
@@ -291,11 +291,11 @@ function showUpdateToast() {
       // トーストを非表示にする（アニメーション開始）
       toast.classList.add('hide');
       setTimeout(() => toast.remove(), 200);
-      
+
       // エラーが発生した場合でもリロードを試みる
       // フラグはリロード実行直前でクリア（レースコンディションを防ぐ）
       setTimeout(() => {
-      (window as any).__updateToastVisible = false;
+        (window as any).__updateToastVisible = false;
         versionManager.reload();
       }, 300);
     }
@@ -324,7 +324,7 @@ function showUpdateToast() {
 (window as any).__showUpdateToast = showUpdateToast;
 
 // 更新通知の集約と重複ガードを初期化（開発環境では無効化）
-if (process.env.NODE_ENV !== 'development') {
+if (import.meta.env.PROD) {
   UpdateNotifier.getInstance().init();
 }
 
@@ -341,27 +341,27 @@ if (typeof module !== 'undefined' && (module as any).hot) {
       }
     });
     cleanupFunctions = [];
-    
+
     // VersionManagerとUpdateNotifierのクリーンアップ
     try {
       versionManager.destroy?.();
     } catch (error) {
       console.error('❌ Error destroying VersionManager:', error);
     }
-    
+
     try {
       UpdateNotifier.getInstance().destroy?.();
     } catch (error) {
       console.error('❌ Error destroying UpdateNotifier:', error);
     }
-    
+
     // ServiceWorkerRegistrationのクリーンアップ
     try {
       serviceWorkerRegistration.cleanup?.();
     } catch (error) {
       console.error('❌ Error cleaning up ServiceWorkerRegistration:', error);
     }
-    
+
     // タイマーをクリア
     if (updateCheckTimer) {
       clearTimeout(updateCheckTimer);

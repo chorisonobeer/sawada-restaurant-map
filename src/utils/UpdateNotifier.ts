@@ -22,7 +22,7 @@ class UpdateNotifier {
 
   init(): void {
     // 開発環境では無効化（HMRとの競合を防ぐ）
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('🔧 Development mode: UpdateNotifier disabled to prevent HMR conflicts');
       return;
     }
@@ -113,7 +113,7 @@ class UpdateNotifier {
     if (typeof (window as any).__showUpdateToast === 'function') {
       console.log('📢 Showing update notification toast');
       try {
-      (window as any).__showUpdateToast();
+        (window as any).__showUpdateToast();
         this.setLastNotifiedTimestamp(serverTs);
       } catch (error) {
         console.error('❌ Error showing update toast:', error);
@@ -139,7 +139,7 @@ class UpdateNotifier {
   private setLastNotifiedTimestamp(ts: number): void {
     try {
       localStorage.setItem(this.storageKey, String(ts));
-    } catch {}
+    } catch { }
   }
 
   private async getLatestServerTimestamp(): Promise<number | undefined> {
@@ -152,7 +152,7 @@ class UpdateNotifier {
           return info.timestamp;
         }
       }
-    } catch {}
+    } catch { }
 
     // フォールバック: 直接 version.json を取得
     try {
