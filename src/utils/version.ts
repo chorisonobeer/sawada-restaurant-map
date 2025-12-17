@@ -4,7 +4,7 @@
  */
 
 // package.jsonからバージョン情報を取得
-const packageJson = require('../../package.json');
+import packageJson from '../../package.json';
 
 export interface VersionInfo {
   version: string;
