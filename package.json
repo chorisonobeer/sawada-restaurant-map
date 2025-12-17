@@ -33,7 +33,7 @@
     "react-swipeable": "^7.0.2",
     "react-virtuoso": "^4.15.0",
     "react-window": "^1.8.6",
-    "typescript": "~4.9.5"
+    "typescript": "^5.0.0"
   },
   "scripts": {
     "start": "vite",
