@@ -207,11 +207,11 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
     if (!mapObject || props.data.length === 0) {
       return;
     }
-    
+
     // データ長が変化した場合、または位置情報がない場合は自動ズーム
     const dataLengthChanged = prevDataLengthRef.current !== null && prevDataLengthRef.current !== props.data.length;
     const isFiltered = props.initialData && props.data.length !== props.initialData.length;
-    
+
     if (dataLengthChanged || isFiltered || !location) {
       const geojson = toGeoJson(props.data);
       const bounds = geojsonExtent(geojson);
@@ -221,7 +221,7 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
         });
       }
     }
-    
+
     // 現在のデータ長を記録
     prevDataLengthRef.current = props.data.length;
   }, [mapObject, props.data, location, props.initialData]);
@@ -247,62 +247,101 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
     if (!mapNode.current || mapObject) {
       return;
     }
-    // @ts-ignore
-    const { geolonia } = window;
-    
-    // GeolocationContextから位置情報を取得して初期位置を決定
-    const initialCenter = location || SADO_CENTER;
-    const initialZoom = location ? 15 : DEFAULT_ZOOM;
-    
-    const map = new geolonia.Map({
-      container: mapNode.current,
-      style: 'geolonia/basic',
-      center: initialCenter,
-      zoom: initialZoom,
-      interactive: true,
-      trackResize: true,
-    });
-    const onMapLoad = () => {
-      hidePoiLayers(map);
-      setMapObject(map);
-      
-      // 地図読み込み後にfilterを確実に適用（親要素に直接適用）
-      if (mapNode.current) {
-        mapNode.current.style.filter = 'saturate(0.85) brightness(1.02)';
-        mapNode.current.style.transform = 'translateZ(0)';
+
+    // 地図ライブラリの読み込み待ち処理
+    const initMap = () => {
+      // @ts-ignore
+      const { geolonia } = window;
+
+      if (!geolonia) {
+        return false;
       }
-      
-      try {
-        const geolocateControl = new geolonia.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true,
-            timeout: 2000,
-            maximumAge: 0
-          },
-          trackUserLocation: true,
-          showUserLocation: true
-        });
-        map.addControl(geolocateControl, 'top-right');
-        geolocateRef.current = geolocateControl;
-        // 現在地を自動取得
-        setTimeout(() => {
-          geolocateControl.trigger();
-        }, 100);
-        geolocateControl.on('error', () => {
-          console.warn('位置情報の取得に失敗しましたが、地図は使用できます');
-        });
-      } catch (error) {
-        console.warn('位置情報コントロールの初期化に失敗しましたが、地図は使用できます', error);
+
+      // GeolocationContextから位置情報を取得して初期位置を決定
+      const initialCenter = location || SADO_CENTER;
+      const initialZoom = location ? 15 : DEFAULT_ZOOM;
+
+      const map = new geolonia.Map({
+        container: mapNode.current,
+        style: 'geolonia/basic',
+        center: initialCenter,
+        zoom: initialZoom,
+        interactive: true,
+        trackResize: true,
+      });
+      const onMapLoad = () => {
+        hidePoiLayers(map);
+        setMapObject(map);
+
+        // 地図読み込み後にfilterを確実に適用（親要素に直接適用）
+        if (mapNode.current) {
+          mapNode.current.style.filter = 'saturate(0.85) brightness(1.02)';
+          mapNode.current.style.transform = 'translateZ(0)';
+        }
+
+        try {
+          const geolocateControl = new geolonia.GeolocateControl({
+            positionOptions: {
+              enableHighAccuracy: true,
+              timeout: 2000,
+              maximumAge: 0
+            },
+            trackUserLocation: true,
+            showUserLocation: true
+          });
+          map.addControl(geolocateControl, 'top-right');
+          geolocateRef.current = geolocateControl;
+          // 現在地を自動取得
+          setTimeout(() => {
+            geolocateControl.trigger();
+          }, 100);
+          geolocateControl.on('error', () => {
+            console.warn('位置情報の取得に失敗しましたが、地図は使用できます');
+          });
+        } catch (error) {
+          console.warn('位置情報コントロールの初期化に失敗しましたが、地図は使用できます', error);
+        }
+      };
+      const orientationChangeHandler = () => {
+        map.resize();
+      };
+      map.on('load', onMapLoad);
+      window.addEventListener('orientationchange', orientationChangeHandler);
+
+      // クリーンアップ関数を返す（useEffectの戻り値として使用されるため、ここで定義）
+      return () => {
+        window.removeEventListener('orientationchange', orientationChangeHandler);
+        map.off('load', onMapLoad);
+      };
+    };
+
+    // 初期化試行
+    const cleanup = initMap();
+
+    // 即座に初期化できた場合はクリーンアップ関数を保存して終了
+    if (cleanup) {
+      return cleanup;
+    }
+
+    // まだライブラリが読み込まれていない場合はポーリング
+    let cleanupFunc: (() => void) | undefined;
+    const intervalId = setInterval(() => {
+      const result = initMap();
+      if (result) {
+        clearInterval(intervalId);
+        cleanupFunc = result as () => void;
       }
-    };
-    const orientationChangeHandler = () => {
-      map.resize();
-    };
-    map.on('load', onMapLoad);
-    window.addEventListener('orientationchange', orientationChangeHandler);
+    }, 100);
+
+    // 最大10秒待機（タイムアウト）
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+    }, 10000);
+
     return () => {
-      window.removeEventListener('orientationchange', orientationChangeHandler);
-      map.off('load', onMapLoad);
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      if (cleanupFunc) cleanupFunc();
     };
   }, [mapObject, location]);
 
@@ -325,17 +364,17 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
   // シンプルに親要素のbottomを調整するだけ
   useEffect(() => {
     if (!mapObject || !mapNode.current) return;
-    
+
     const adjustAttributionPosition = () => {
       // Y方向の上移動を0にする（位置調整を無効化）
       const bottomValue = 0;
-      
+
       // 親要素のbottomを調整
       const parentSelectors = [
         '.maplibregl-ctrl-bottom-left',
         '.maplibregl-ctrl-bottom-right'
       ];
-      
+
       parentSelectors.forEach(parentSelector => {
         const parentElement = mapNode.current?.querySelector(parentSelector) as HTMLElement;
         if (parentElement) {
@@ -343,14 +382,14 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
           parentElement.style.setProperty('z-index', '50', 'important');
         }
       });
-      
+
       // attribution control自体のmarginを調整（重要！）
       // marginが位置に影響しているため、margin-bottomを調整する
       const attributionSelectors = [
         '.maplibregl-ctrl-attrib.maplibregl-compact',
         'details.maplibregl-ctrl-attrib.maplibregl-compact'
       ];
-      
+
       attributionSelectors.forEach(selector => {
         const element = mapNode.current?.querySelector(selector) as HTMLElement;
         if (element) {
@@ -360,33 +399,33 @@ function Map<T extends MapPointBase = MapPointBase>(props: MapProps<T>) {
         }
       });
     };
-    
+
     // マップ読み込み後に実行
     const onMapLoadHandler = () => {
       setTimeout(adjustAttributionPosition, 200);
     };
-    
+
     mapObject.on('load', onMapLoadHandler);
-    
+
     // 即座に実行（既に読み込み済みの場合）
     setTimeout(adjustAttributionPosition, 300);
-    
+
     // MutationObserverで親要素の追加を監視
     const observer = new MutationObserver(() => {
       setTimeout(adjustAttributionPosition, 100);
     });
-    
+
     observer.observe(mapNode.current, {
       childList: true,
       subtree: true
     });
-    
+
     // リサイズ時にも再調整
     const resizeHandler = () => {
       setTimeout(adjustAttributionPosition, 100);
     };
     window.addEventListener('resize', resizeHandler);
-    
+
     return () => {
       mapObject.off('load', onMapLoadHandler);
       observer.disconnect();
