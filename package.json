@@ -42,7 +42,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "npm run version:inject && vite build",
     "serve": "vite preview",
     "version:inject": "node bin/version-inject.js",
     "lint": "eslint ./src --ext .ts,.tsx",

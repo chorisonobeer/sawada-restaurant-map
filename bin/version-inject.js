@@ -101,7 +101,7 @@ try {
 // 追加: デプロイURLに合わせて index.html のOGP絶対URLを自動調整
 // =====================================================
 try {
-  const indexPath = path.join(__dirname, '../public/index.html');
+  const indexPath = path.join(__dirname, '../index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
 
   // Netlify が提供する本番URL/デプロイURLを優先
