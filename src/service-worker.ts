@@ -115,8 +115,10 @@ registerRoute(
 registerRoute(
   ({ request, url }) => {
     return (
-      request.destination === 'image' ||
-      url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico)$/i)
+      (request.destination === 'image' ||
+        url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico)$/i)) &&
+      !url.pathname.includes('/.netlify/') &&
+      !url.pathname.includes('/image-proxy')
     );
   },
   new StaleWhileRevalidate({
